@@ -42,6 +42,9 @@ const P: Record<string, JSX.Element> = {
   trash: <><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></>,
   star: <path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z" />,
   home: <path d="M3 10.5 12 3l9 7.5V21H3z" />,
+  rotateL: <><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></>,
+  rotateR: <><path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 4v5h-5" /></>,
+  flip: <><path d="M12 3v18" /><path d="M8 7 3 12l5 5z" /><path d="m16 7 5 5-5 5z" /></>,
 };
 
 export type IconName = keyof typeof P;

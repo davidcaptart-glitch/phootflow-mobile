@@ -26,3 +26,4 @@ export type { SavedSession, SavedPhoto, Version } from "./library";
 export * as license from "./license/license";
 export { platform, setPlatform } from "./platform";
 export type { Platform, PickedPhoto, ShareResult, StorePurchase } from "./platform";
+export * as pro from "./pro";
