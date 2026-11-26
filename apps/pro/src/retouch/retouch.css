@@ -1,0 +1,47 @@
+/* Retocar (Pro): mismo estilo «Inmersiva» que Revelar. */
+
+/* elegir foto */
+.rt-badge { position: absolute; right: 5px; bottom: 5px; height: 20px; padding: 0 7px 0 5px; border-radius: 999px; display: inline-flex; align-items: center; gap: 3px; font-size: 11px; font-weight: 700; color: #fff; background: rgba(245, 13, 138, 0.88); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5); }
+
+/* escenario */
+.rt-stage { flex: 1; min-height: 0; position: relative; display: grid; place-items: center; overflow: hidden; background: #0b0c10; }
+.rt-stage.zoomed { place-items: start; overflow: auto; -webkit-overflow-scrolling: touch; }
+.rt-wrap { position: relative; margin: 8px; flex: none; }
+.rt-view, .rt-over { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.rt-view {
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.5);
+  /* cuadros para ver lo transparente (fondo quitado) */
+  background: repeating-conic-gradient(#2a2f3d 0 25%, #1b1f2a 0 50%) 0 0 / 18px 18px;
+}
+.rt-over { touch-action: none; }
+.rt-over.brush { cursor: crosshair; }
+.rt-over.hand { pointer-events: none; }
+.rt-stage.zoomed .rt-over:not(.hand) { touch-action: none; }
+.rt-float { position: absolute; left: 10px; top: 10px; display: flex; gap: 6px; z-index: 2; }
+.rt-fbtn { height: 34px; min-width: 34px; padding: 0 10px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; font-size: 12.5px; font-weight: 700; background: rgba(5, 7, 15, 0.6); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border: 1px solid var(--line-strong); color: var(--strong); }
+.rt-fbtn.on { background: var(--strong); color: #05070f; }
+.retouch .before-btn { position: absolute; z-index: 2; }
+
+/* panel de herramientas */
+.rt-panel { max-height: 36vh; }
+.rt-panel .chips { padding-bottom: 6px; }
+.rt-cta { padding: 6px 16px 4px; display: grid; gap: 8px; }
+.rt-empty { padding-top: 2px; }
+.rt-text { min-height: 56px; font-size: 16px; }
+.rt-swatches { display: flex; gap: 10px; overflow-x: auto; padding: 4px 16px 10px; scrollbar-width: none; }
+.rt-swatches::-webkit-scrollbar { display: none; }
+.rt-sw { flex: none; width: 30px; height: 30px; border-radius: 50%; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28); position: relative; overflow: hidden; }
+.rt-sw.on { box-shadow: 0 0 0 2px #05070f, 0 0 0 4px var(--accent); }
+.rt-custom { background: conic-gradient(#ff5c6c, #ffd166, #3ccf91, #4da3ff, #7b2ff7, #f50d8a, #ff5c6c); cursor: pointer; }
+.rt-custom input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+.retouch .tabs { flex: none; }
+.retouch .tab { min-width: 52px; }
+
+/* capas */
+.rt-layers { display: grid; gap: 4px; padding: 0 10px 8px; }
+.rt-layer { display: flex; align-items: center; gap: 2px; border-radius: 14px; padding: 2px 4px; border: 1px solid transparent; }
+.rt-layer.on { background: rgba(245, 13, 138, 0.14); border-color: rgba(245, 13, 138, 0.45); }
+.rt-layer.off .rt-lname { opacity: 0.45; }
+.rt-vis, .rt-mini { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: var(--muted); flex: none; }
+.rt-lname { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; text-align: left; font-size: 14px; font-weight: 600; color: var(--strong); padding: 8px 4px; }
+.rt-layer.on .rt-vis { color: var(--strong); }

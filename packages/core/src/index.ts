@@ -27,3 +27,4 @@ export * as license from "./license/license";
 export { platform, setPlatform } from "./platform";
 export type { Platform, PickedPhoto, ShareResult, StorePurchase } from "./platform";
 export * as pro from "./pro";
+export * as retouch from "./retouch";
