@@ -13,8 +13,10 @@ const SIZES: [string, number, string][] = [
   ["Ligera", 1080, "1080 px"],
 ];
 
-export function ExportSheet({ photos, devOf, onClose }: {
+export function ExportSheet({ photos, devOf, onClose, exporter }: {
   photos: pro.CatalogPhoto[]; devOf: (p: pro.CatalogPhoto) => pro.Dev; onClose: () => void;
+  /** Otra forma de crear el archivo (Retocar: revelar y componer las capas). */
+  exporter?: (p: pro.CatalogPhoto, opt: ExportOptions) => Promise<File>;
 }) {
   const [size, setSize] = useState(2);
   const [type, setType] = useState<ExportOptions["type"]>("image/jpeg");
@@ -27,7 +29,8 @@ export function ExportSheet({ photos, devOf, onClose }: {
     try {
       for (const [i, p] of photos.entries()) {
         setBusy(`Revelando ${i + 1} de ${photos.length}…`);
-        files.push(await exportPhoto(p, devOf(p), { maxSide: SIZES[size][1], type, quality: quality / 100 }));
+        const opt = { maxSide: SIZES[size][1], type, quality: quality / 100 };
+        files.push(await (exporter ? exporter(p, opt) : exportPhoto(p, devOf(p), opt)));
       }
       setDone(files);
       setBusy(null);

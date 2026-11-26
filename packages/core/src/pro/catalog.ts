@@ -21,7 +21,8 @@ export interface CatalogPhoto {
 }
 
 const DB = "phootflow-pro";
-const VERSION = 1;
+// 2: almacén «retouch» (capas de Retocar, una entrada por foto)
+const VERSION = 2;
 
 let dbp: Promise<IDBDatabase> | null = null;
 function db(): Promise<IDBDatabase> {
@@ -32,6 +33,7 @@ function db(): Promise<IDBDatabase> {
       if (!d.objectStoreNames.contains("photos")) d.createObjectStore("photos", { keyPath: "id" });
       if (!d.objectStoreNames.contains("originals")) d.createObjectStore("originals");
       if (!d.objectStoreNames.contains("presets")) d.createObjectStore("presets", { keyPath: "id" });
+      if (!d.objectStoreNames.contains("retouch")) d.createObjectStore("retouch", { keyPath: "id" });
     };
     r.onsuccess = () => res(r.result);
     r.onerror = () => rej(r.error);
@@ -86,9 +88,10 @@ export async function original(id: string): Promise<Blob | null> {
 /** Quita la foto del catálogo de la app (la del carrete del móvil no se toca). */
 export async function removePhoto(id: string) {
   const d = await db();
-  const tx = d.transaction(["photos", "originals"], "readwrite");
+  const tx = d.transaction(["photos", "originals", "retouch"], "readwrite");
   tx.objectStore("photos").delete(id);
   tx.objectStore("originals").delete(id);
+  tx.objectStore("retouch").delete(id);
   await new Promise<void>((res, rej) => { tx.oncomplete = () => res(); tx.onerror = () => rej(tx.error); });
 }
 
@@ -102,4 +105,24 @@ export async function savePreset(p: ProPreset) {
 
 export async function deletePreset(id: string) {
   await req((await store("presets", "readwrite")).delete(id));
+}
+
+// ------------------------------------------------------------------ Retocar
+/** Retoque de una foto (mismo id que la foto): capas de `retouch/layers` y la miniatura con el retoque. */
+export interface RetouchRecord { id: string; layers: unknown[]; edited: number; thumb: Blob | null; }
+
+export async function getRetouch(id: string): Promise<RetouchRecord | null> {
+  return ((await req((await store("retouch")).get(id))) as RetouchRecord | undefined) ?? null;
+}
+
+export async function listRetouch(): Promise<RetouchRecord[]> {
+  return (await req((await store("retouch")).getAll())) as RetouchRecord[];
+}
+
+export async function saveRetouch(r: RetouchRecord) {
+  await req((await store("retouch", "readwrite")).put(r));
+}
+
+export async function deleteRetouch(id: string) {
+  await req((await store("retouch", "readwrite")).delete(id));
 }

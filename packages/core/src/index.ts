@@ -29,3 +29,4 @@ export type { Platform, PickedPhoto, ShareResult, StorePurchase } from "./platfo
 export * as pro from "./pro";
 export * from "./updates/changelog";
 export { setUnsavedWork, hasUnsavedWork, checkForUpdate, applyUpdate } from "./updates/pwa";
+export * as retouch from "./retouch";

@@ -57,6 +57,15 @@ const P: Record<string, JSX.Element> = {
   update: <><path d="M20 11a8 8 0 0 0-14.6-4.5L4 8" /><path d="M4 4v4h4" /><path d="M4 13a8 8 0 0 0 14.6 4.5L20 16" /><path d="M20 20v-4h-4" /></>,
   news: <><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" /><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /><path d="M5 16v4M3 18h4" /></>,
   flip: <><path d="M12 3v18" /><path d="M8 7 3 12l5 5z" /><path d="m16 7 5 5-5 5z" /></>,
+  undo: <><path d="M9 14 4 9l5-5" /><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11" /></>,
+  redo: <><path d="m15 14 5-5-5-5" /><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13" /></>,
+  heal: <><rect x="2.5" y="8.5" width="19" height="7" rx="3.5" transform="rotate(-45 12 12)" /><path d="M10.6 10.6h.01M13.4 13.4h.01M10.6 13.4h.01M13.4 10.6h.01" /></>,
+  stamp: <><path d="M9.5 13V9.8A3 3 0 0 1 8.3 7.5a3.7 3.7 0 1 1 7.4 0 3 3 0 0 1-1.2 2.3V13" /><path d="M4 16.5a1.5 1.5 0 0 1 1.5-1.5h13a1.5 1.5 0 0 1 1.5 1.5V18H4z" /><path d="M6 21h12" /></>,
+  eyeOff: <><path d="M10.6 5.1A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-2.6 3.6M6.6 6.6C3.7 8.4 2 12 2 12s3.6 7 10 7c1.9 0 3.5-.6 4.9-1.4" /><path d="m3 3 18 18M9.9 9.9a3 3 0 0 0 4.2 4.2" /></>,
+  up: <path d="m6 15 6-6 6 6" />,
+  down: <path d="m6 9 6 6 6-6" />,
+  target: <><circle cx="12" cy="12" r="7" /><path d="M12 2v5M12 17v5M2 12h5M17 12h5" /></>,
+  person: <><circle cx="12" cy="7.5" r="3.5" /><path d="M5 21c.9-4.2 3.6-7 7-7s6.1 2.8 7 7" /></>,
 };
 
 export type IconName = keyof typeof P;

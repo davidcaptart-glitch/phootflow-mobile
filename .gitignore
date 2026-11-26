@@ -28,3 +28,6 @@ keystore.properties
 
 # modelos de IA servidos por la app (los deja tools/modelos.py)
 apps/*/public/modelos/
+
+# sesiones y worktrees de Claude Code
+.claude/
