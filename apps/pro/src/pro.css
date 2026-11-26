@@ -133,3 +133,47 @@
   .screen { left: 50%; right: auto; width: 430px; transform: translateX(-50%); border-left: 1px solid var(--line); border-right: 1px solid var(--line); background: var(--bg); }
   .mode-nav, .lib-actions { left: 50%; right: auto; width: 406px; transform: translateX(-50%); }
 }
+
+/* ---- Inmersiva en Pro: la foto sobre un fondo hecho con ella misma ---- */
+.develop { overflow: clip; }
+.develop .ambient { position: absolute; inset: -40px; background: center / cover no-repeat; filter: blur(42px) brightness(0.36) saturate(1.2); transform: scale(1.1); pointer-events: none; }
+.develop > .topbar, .develop > .stage, .develop > .dev-actions, .develop > .dev-panel, .develop > .tabs { position: relative; }
+.develop .stage { background: transparent; }
+
+/* biblioteca con portada */
+.lib-hero { position: relative; height: 30vh; min-height: 190px; margin-bottom: 10px; background: #0b0d16 center / cover no-repeat; display: flex; align-items: flex-end; }
+.lib-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(5, 7, 15, 0.35) 0%, rgba(5, 7, 15, 0) 30%, rgba(5, 7, 15, 0.85) 85%, #05070f 100%); }
+.lib-hero > * { position: relative; z-index: 1; }
+.lib-hero-text { padding: 0 20px 6px; }
+.lib-hero-text h1 { font-size: 30px; margin: 0; text-shadow: 0 2px 20px rgba(5, 7, 15, 0.5); }
+.lib-hero-text p { margin: 2px 0 0; color: var(--text); font-size: 13.5px; }
+.lib .topbar.over { position: absolute; left: 0; right: 0; top: 0; z-index: 6; }
+
+/* máscaras */
+.mask-strip { display: flex; gap: 8px; overflow-x: auto; padding: 0 16px 8px; scrollbar-width: none; }
+.mask-strip::-webkit-scrollbar { display: none; }
+.mask-chip { flex: none; height: 38px; padding: 0 14px 0 6px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; background: var(--glass-soft); border: 1px solid var(--line-strong); color: var(--text); }
+.mask-chip.on { background: rgba(245, 13, 138, 0.16); border-color: var(--accent); color: var(--strong); }
+.mask-chip.off { opacity: 0.5; text-decoration: line-through; }
+.mask-chip.add { padding: 0 14px; border-style: dashed; }
+.mask-n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; background: var(--surface-3); color: var(--strong); }
+.mask-chip.on .mask-n { background: var(--accent); }
+.mask-tools { display: flex; justify-content: space-between; padding: 2px 16px 0; }
+.mask-tools .icon-btn { width: 42px; height: 42px; }
+.chip.absent:not(.on) { opacity: 0.45; }
+.type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0 16px 6px; }
+.type-btn { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border-radius: 16px; background: var(--glass-soft); border: 1px solid var(--line); font-size: 12px; font-weight: 600; text-align: center; color: var(--text); }
+.type-btn:active { background: rgba(245, 13, 138, 0.14); }
+.gizmo-layer { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); touch-action: none; z-index: 2; }
+.gizmo-layer:not(.paint):not(.tap) { pointer-events: none; }
+.gizmo-layer:not(.paint):not(.tap) .gz-h, .gizmo-layer:not(.paint):not(.tap) .gz-line.dash { pointer-events: auto; }
+.gizmo-layer.paint, .gizmo-layer.tap { cursor: crosshair; }
+.gizmo-svg { display: block; overflow: visible; }
+.gz-line { fill: none; stroke: #fff; stroke-width: 1.6; filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.8)); }
+.gz-line.soft { stroke-dasharray: 5 5; opacity: 0.8; }
+.gz-line.dash { stroke-dasharray: 2 6; stroke-width: 8; stroke: rgba(255, 255, 255, 0.35); cursor: move; }
+.gz-h { fill: #fff; stroke: var(--accent); stroke-width: 3; cursor: grab; filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.7)); touch-action: none; }
+.gz-h.big { fill: var(--accent); stroke: #fff; }
+.gz-brush { fill: rgba(245, 13, 138, 0.12); stroke: #fff; stroke-width: 1.5; pointer-events: none; }
+.gz-brush.erase { fill: rgba(255, 255, 255, 0.08); stroke-dasharray: 4 4; }
+.mask-busy { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); z-index: 3; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: var(--glass); -webkit-backdrop-filter: var(--blur); backdrop-filter: var(--blur); border: 1px solid var(--line); }

@@ -1,4 +1,5 @@
 // Importar al catálogo, miniaturas y exportar a resolución completa (con un revelador aparte del de la vista).
+import { MaskWork } from "./maskwork";
 import { decode, decodeSized, loadLut, LUT_SIZE, measure, pixelsOf, pro, shrink, toJpeg, type PickedPhoto, type Pixels } from "@phootflow/core";
 
 let offscreen: pro.ProRenderer | null = null;
@@ -34,25 +35,35 @@ export async function importPhotos(picked: PickedPhoto[], onProgress?: (done: nu
   return { added, errors };
 }
 
+/** Alfas de las máscaras en el revelador aparte (siempre desde cero: cada foto tiene las suyas). */
+async function syncMasks(r: pro.ProRenderer, dev: pro.Dev, work: Pixels, mw?: MaskWork | null) {
+  r.keepMasks([]);
+  if (!dev.masks.length) return;
+  await (mw ?? new MaskWork(work)).sync(r, dev.masks);
+}
+
 /** Miniatura revelada a partir de la foto de trabajo ya decodificada. */
-export async function thumbFrom(work: Pixels, dev: pro.Dev, side = 480): Promise<Blob> {
+export async function thumbFrom(work: Pixels, dev: pro.Dev, side = 480, mw?: MaskWork | null): Promise<Blob> {
   const r = renderer();
   const src = shrink(work, side * 2);
   r.setSource(src as unknown as HTMLCanvasElement);
   await prepareLut(r, dev);
+  await syncMasks(r, dev, work, mw);
   const o = pro.outputSize(dev, src.width, src.height, side);
   r.render(dev, o);
   return r.toBlob("image/jpeg", 0.82);
 }
 
 /** Vistas previas pequeñas de varios ajustes sobre la misma foto (para los presets). */
-export async function previews(work: Pixels, devs: pro.Dev[], side = 160): Promise<string[]> {
+export async function previews(work: Pixels, devs: pro.Dev[], side = 160, mw?: MaskWork | null): Promise<string[]> {
   const r = renderer();
   const src = shrink(work, side * 2);
   r.setSource(src as unknown as HTMLCanvasElement);
   const out: string[] = [];
+  r.keepMasks([]);
   for (const d of devs) {
     await prepareLut(r, d);
+    if (d.masks.length && mw) await mw.sync(r, d.masks);
     const o = pro.outputSize(d, src.width, src.height, side);
     r.render(d, o);
     out.push(URL.createObjectURL(await r.toBlob("image/jpeg", 0.8)));
@@ -79,6 +90,7 @@ export async function exportPhoto(ph: pro.CatalogPhoto, dev: pro.Dev, opt: Expor
   const img = await decode(blob, need);
   r.setSource(img as unknown as HTMLCanvasElement);
   await prepareLut(r, dev);
+  await syncMasks(r, dev, img);
   const o = pro.outputSize(dev, img.width, img.height, opt.maxSide);
   r.render(dev, o);
   const out = await r.toBlob(opt.type, opt.quality);

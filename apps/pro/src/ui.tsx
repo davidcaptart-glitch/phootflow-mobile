@@ -1,6 +1,7 @@
 // Piezas de la interfaz de Pro: regulador con valor por defecto (doble toque = restablecer), histograma y hoja.
 import type { ComponentChildren } from "preact";
 import { useEffect, useRef } from "preact/hooks";
+import { createPortal } from "preact/compat";
 import { Icon } from "@phootflow/core/ui";
 
 export function PSlider({ label, value, min = -100, max = 100, step = 1, def = 0, track, fmt, onInput, onCommit }: {
@@ -67,8 +68,9 @@ export function Histogram({ data }: { data: Float32Array[] | null }) {
   return <canvas ref={ref} class="histogram" width={160} height={64} aria-label="Histograma" role="img" />;
 }
 
+/** Hoja inferior. Va al nivel de la página: dentro de un panel de cristal (backdrop-filter) quedaría encerrada. */
 export function Sheet({ title, onClose, children }: { title: string; onClose: () => void; children: ComponentChildren }) {
-  return (
+  return createPortal(
     <div class="sheet-bg" onClick={onClose}>
       <div class="sheet" onClick={(e) => e.stopPropagation()} role="dialog" aria-label={title}>
         <div class="row" style={{ padding: "0 16px 8px" }}>
@@ -77,7 +79,8 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

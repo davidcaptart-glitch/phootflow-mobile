@@ -2,7 +2,8 @@
 // y la exportación a resolución completa (los radios del detalle se miden respecto al lado largo de la foto).
 import { BLUR, DOWN, VERT } from "../render/shaders";
 import { rotateCover } from "../engine/straighten";
-import { PRO_MAIN } from "./shaders";
+import { PRO_COPY, PRO_LOCAL, PRO_MAIN } from "./shaders";
+import { adjActive, adjUniforms, type LocalMask } from "./masks";
 import { curveTable, isLine, rotatedSize, type Dev } from "./dev";
 
 interface Target { fb: WebGLFramebuffer; tex: WebGLTexture; w: number; h: number; }
@@ -18,6 +19,8 @@ export interface ProRenderOptions {
   original?: boolean;
   /** Ignorar el recorte (para editar el encuadre sobre la foto entera). */
   noCrop?: boolean;
+  /** id de la máscara que se ve en magenta encima. */
+  showMask?: string | null;
 }
 
 export class ProRenderer {
@@ -40,6 +43,11 @@ export class ProRenderer {
   private blurs: Partial<Record<BlurKey, Target>> = {};
   private tmp: Target[] = [];
   private loc = new Map<string, WebGLUniformLocation | null>();
+  private local: WebGLProgram;
+  private copy: WebGLProgram;
+  private ping: Target[] = [];
+  /** Alfa de cada máscara (por id), con la clave de lo que lo generó. */
+  private alphas = new Map<string, { key: string; tex: WebGLTexture }>();
 
   constructor(canvas?: HTMLCanvasElement | OffscreenCanvas) {
     this.canvas = canvas ?? document.createElement("canvas");
@@ -50,6 +58,8 @@ export class ProRenderer {
     this.main = this.program(PRO_MAIN);
     this.down = this.program(DOWN);
     this.blur = this.program(BLUR);
+    this.local = this.program(PRO_LOCAL);
+    this.copy = this.program(PRO_COPY);
     this.vao = gl.createVertexArray()!;
     gl.bindVertexArray(this.vao);
     const buf = gl.createBuffer();
@@ -183,6 +193,26 @@ export class ProRenderer {
     return a;
   }
 
+  /** Alfa de una máscara (bytes 0..255, w×h, en coordenadas de la foto original). */
+  setMaskAlpha(id: string, key: string, data: Uint8Array, w: number, h: number) {
+    const gl = this.gl;
+    let e = this.alphas.get(id);
+    if (e?.key === key) return;
+    if (!e) { e = { key, tex: this.tex2d() }; this.alphas.set(id, e); }
+    e.key = key;
+    gl.bindTexture(gl.TEXTURE_2D, e.tex);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.R8, w, h, 0, gl.RED, gl.UNSIGNED_BYTE, data);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
+  }
+
+  hasMaskAlpha(id: string, key: string) { return this.alphas.get(id)?.key === key; }
+
+  /** Olvida los alfas de las máscaras que ya no existen. */
+  keepMasks(ids: string[]) {
+    for (const [id, e] of this.alphas) if (!ids.includes(id)) { this.gl.deleteTexture(e.tex); this.alphas.delete(id); }
+  }
+
   private u(name: string) {
     if (!this.loc.has(name)) this.loc.set(name, this.gl.getUniformLocation(this.main, name));
     return this.loc.get(name)!;
@@ -194,7 +224,13 @@ export class ProRenderer {
     const canvas = this.canvas;
     if (canvas.width !== o.width || canvas.height !== o.height) { canvas.width = o.width; canvas.height = o.height; }
     gl.viewport(0, 0, o.width, o.height);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    const local = o.original ? [] : d.masks.filter((m) => this.alphas.has(m.id)
+      && ((m.enabled !== false && adjActive(m.adj)) || o.showMask === m.id));
+    if (local.length) {
+      while (this.ping.length < 2) this.ping.push(this.target(o.width, o.height));
+      for (let i = 0; i < 2; i++) if (this.ping[i].w !== o.width || this.ping[i].h !== o.height) { this.free(this.ping[i]); this.ping[i] = this.target(o.width, o.height); }
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.ping[0].fb);
+    } else gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     const p = this.main;
     gl.useProgram(p);
     this.bind(p, "uSrc", 0, this.src);
@@ -253,6 +289,52 @@ export class ProRenderer {
     f1("uLutAmount", d.lutAmount / 100); f1("uLutSize", this.lutSize);
     f1("uBw", d.bw ? 1 : 0);
     gl.uniform1fv(u("uBwMix"), new Float32Array(d.bwMix.map((v) => v / 100)));
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    if (local.length) this.renderMasks(d, o, local, c);
+  }
+
+  /** Una pasada por máscara (de ping a pong) y la copia final a la pantalla. */
+  private renderMasks(d: Dev, o: ProRenderOptions, list: LocalMask[], c: { x: number; y: number; w: number; h: number }) {
+    const gl = this.gl;
+    const p = this.local;
+    gl.useProgram(p);
+    const L = (n: string) => gl.getUniformLocation(p, n);
+    const r = rotatedSize(this.srcW, this.srcH, d.rotate);
+    gl.uniform1f(L("uFlip"), 1);
+    gl.uniform4f(L("uCrop"), c.x, c.y, c.w, c.h);
+    gl.uniform1f(L("uAspect"), r.w / r.h);
+    gl.uniform1f(L("uAngle"), (d.angle * Math.PI) / 180);
+    gl.uniform1f(L("uZoom"), rotateCover(d.angle, r.w, r.h));
+    gl.uniform1f(L("uFlipH"), d.flipH ? 1 : 0);
+    gl.uniform1f(L("uRot"), d.rotate / 90);
+    this.bind(p, "uSrc", 2, this.src!);
+    this.bind(p, "uB1", 3, this.blurs.b1!.tex);
+    this.bind(p, "uBT", 4, this.blurs.bt!.tex);
+    this.bind(p, "uB2", 5, this.blurs.b2!.tex);
+    this.bind(p, "uB3", 6, this.blurs.b3!.tex);
+    let from = 0;
+    for (const m of list) {
+      const to = 1 - from;
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.ping[to].fb);
+      this.bind(p, "uIn", 0, this.ping[from].tex);
+      this.bind(p, "uAlpha", 1, this.alphas.get(m.id)!.tex);
+      const on = m.enabled !== false && adjActive(m.adj);
+      const a = adjUniforms(on ? m.adj : {});
+      gl.uniform1fv(L("uBasic"), new Float32Array(a.basic));
+      gl.uniform1fv(L("uPres"), new Float32Array(a.presence));
+      gl.uniform1fv(L("uCurveZ"), new Float32Array(a.curve));
+      gl.uniform3fv(L("uHslM"), new Float32Array(a.hsl));
+      gl.uniform1fv(L("uGradeM"), new Float32Array(a.grade));
+      const flag = a.curve.some((v) => v) || a.hsl.some((v) => v) || a.presence[3] !== 0 || [1, 3, 5].some((i) => a.grade[i]);
+      gl.uniform1f(L("uFlag"), flag ? 1 : 0);
+      gl.uniform1f(L("uShow"), o.showMask === m.id ? 1 : 0);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+      from = to;
+    }
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.useProgram(this.copy);
+    gl.uniform1f(gl.getUniformLocation(this.copy, "uFlip"), 1);
+    this.bind(this.copy, "uIn", 0, this.ping[from].tex);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }
 

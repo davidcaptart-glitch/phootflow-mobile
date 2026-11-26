@@ -10,13 +10,15 @@ import { ExportSheet } from "./ExportSheet";
 import { PresetSheet } from "./PresetSheet";
 import { Group, Histogram, PSlider, Sheet, TRACKS } from "./ui";
 import { prepareLut, previews, thumbFrom } from "./work";
+import { MaskGizmo, MaskPanel, NO_UI, type MaskUi } from "./MaskPanel";
+import { MaskWork } from "./maskwork";
 import type { Clip } from "./Library";
 
-type Tab = "profile" | "light" | "color" | "curve" | "mix" | "grade" | "detail" | "effects" | "crop";
+type Tab = "profile" | "light" | "color" | "curve" | "mix" | "grade" | "detail" | "effects" | "masks" | "crop";
 const TABS: [Tab, string, string][] = [
   ["light", "light", "Luz"], ["color", "palette", "Color"], ["curve", "styles", "Curva"], ["mix", "filters", "Mezcla"],
   ["grade", "color", "Gradación"], ["effects", "beauty", "Efectos"], ["detail", "zoom", "Detalle"], ["profile", "bw", "Perfil"],
-  ["crop", "crop", "Recorte"],
+  ["masks", "mask", "Máscaras"], ["crop", "crop", "Recorte"],
 ];
 type Key = keyof pro.Dev;
 const D = pro.DEFAULT_DEV;
@@ -40,6 +42,10 @@ export function Develop({ id, onBack, clip, setClip }: {
   const r = useRef<pro.ProRenderer | null>(null);
   const host = useRef<HTMLDivElement>(null);
   const work = useRef<Pixels | null>(null);
+  const mw = useRef<MaskWork | null>(null);
+  const [mui, setMuiState] = useState<MaskUi>(NO_UI);
+  const setMui = (u: Partial<MaskUi>) => setMuiState((o) => ({ ...o, ...u }));
+  const [maskBusy, setMaskBusy] = useState(false);
   const devRef = useRef(dev);
   devRef.current = dev;
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(""), 1600); };
@@ -61,6 +67,7 @@ export function Develop({ id, onBack, clip, setClip }: {
       work.current = await decode(blob, Math.min(WORK_SIDE, r.current.maxSize));
       if (!alive) return;
       r.current.setSource(work.current as unknown as HTMLCanvasElement);
+      mw.current = new MaskWork(work.current);
       setReady(true);
     })();
     return () => { alive = false; };
@@ -71,7 +78,7 @@ export function Develop({ id, onBack, clip, setClip }: {
     if (!photo) return;
     const d = devRef.current;
     const patch: Partial<pro.CatalogPhoto> = { dev: d, touched: pro.changedGroups(d).length > 0, edited: Date.now() };
-    if (withThumb && work.current) patch.thumb = await thumbFrom(work.current, d);
+    if (withThumb && work.current) patch.thumb = await thumbFrom(work.current, d, 480, mw.current);
     await pro.catalog.updatePhoto(photo.id, patch);
   };
   const saveTimer = useRef<number>(0);
@@ -87,6 +94,12 @@ export function Develop({ id, onBack, clip, setClip }: {
     frame.current = requestAnimationFrame(async () => {
       const R = r.current!, img = work.current!, el = host.current!;
       await prepareLut(R, dev);
+      if (dev.masks.length && mw.current) {
+        const needsAi = dev.masks.some((m) => [m, ...m.parts].some((z) => pro.masks.needsAI(z.type) || pro.masks.needsFaces(z.type)));
+        if (needsAi) setMaskBusy(true);
+        await mw.current.sync(R, dev.masks);
+        setMaskBusy(false);
+      }
       if (!alive) return;
       const cropping = tab === "crop";
       const o = cropping ? pro.outputSize({ ...dev, crop: { x: 0, y: 0, w: 1, h: 1 } }, img.width, img.height) : pro.outputSize(dev, img.width, img.height);
@@ -98,12 +111,12 @@ export function Develop({ id, onBack, clip, setClip }: {
       c.style.width = `${w}px`; c.style.height = `${h}px`;
       setShown((s) => (Math.abs(s.w - w) > 0.5 || Math.abs(s.h - h) > 0.5 ? { w, h } : s));
       const W = Math.round(Math.min(o.width, w * Math.min(2, devicePixelRatio)));
-      R.render(dev, { width: W, height: Math.max(1, Math.round(W / ar)), original: before, noCrop: cropping });
+      R.render(dev, { width: W, height: Math.max(1, Math.round(W / ar)), original: before, noCrop: cropping, showMask: tab === "masks" && mui.show ? mui.sel : null });
       clearTimeout(histTimer.current);
       histTimer.current = window.setTimeout(() => setHisto(R.histogram()), 120);
     });
     return () => { alive = false; };
-  }, [dev, ready, before, tab]);
+  }, [dev, ready, before, tab, mui.show, mui.sel]);
 
   // ---- cambios e historial
   const set = (patch: Partial<pro.Dev>) => setDev((d) => ({ ...d, ...patch }));
@@ -135,8 +148,12 @@ export function Develop({ id, onBack, clip, setClip }: {
     flash("Ajuste automático");
   };
 
+  const ambient = useMemo(() => (photo?.thumb ? URL.createObjectURL(photo.thumb) : null), [photo?.id]);
+  useEffect(() => () => { if (ambient) URL.revokeObjectURL(ambient); }, [ambient]);
+
   return (
     <div class="screen develop">
+      {ambient && <div class="ambient" style={{ backgroundImage: `url(${ambient})` }} />}
       <div class="topbar">
         <button class="icon-btn" onClick={back} aria-label="Volver a la biblioteca"><Icon name="back" /></button>
         <div class="title">
@@ -154,6 +171,16 @@ export function Develop({ id, onBack, clip, setClip }: {
           <CropBox dev={dev} w={shown.w} h={shown.h} imgW={work.current!.width} imgH={work.current!.height}
             onInput={(crop) => set({ crop })} onCommit={() => commit("Recorte")} />
         )}
+        {ready && tab === "masks" && shown.w > 0 && mw.current && (
+          <MaskGizmo dev={dev} ui={mui} setUi={setMui} w={shown.w} h={shown.h} srcW={work.current!.width} srcH={work.current!.height}
+            rgbAt={(sx, sy) => {
+              const c = mw.current!.ctx, x = Math.round(Math.max(0, Math.min(1, sx)) * (c.w - 1)), y = Math.round(Math.max(0, Math.min(1, sy)) * (c.h - 1));
+              const i = (y * c.w + x) * 3;
+              return [c.rgb[i], c.rgb[i + 1], c.rgb[i + 2]];
+            }}
+            onLive={(d) => set({ masks: d.masks })} onCommit={commit} />
+        )}
+        {maskBusy && <div class="mask-busy"><div class="spinner sm" />Calculando la máscara con IA…</div>}
         {showHisto && ready && tab !== "crop" && <div class="histo-wrap" onClick={() => setShowHisto(false)}><Histogram data={histo} /></div>}
         {!showHisto && ready && tab !== "crop" && <button class="histo-btn" onClick={() => setShowHisto(true)} aria-label="Mostrar histograma"><Icon name="carousel" size={16} /></button>}
         {ready && tab !== "crop" && (
@@ -235,6 +262,7 @@ export function Develop({ id, onBack, clip, setClip }: {
             <p class="hint">Para ver bien el detalle, amplía la foto con dos dedos o exporta a tamaño completo.</p>
           </>
         )}
+        {tab === "masks" && <MaskPanel dev={dev} ui={mui} setUi={setMui} set={set} commit={commit} note={mw.current?.note ?? ""} />}
         {tab === "profile" && <ProfilePanel dev={dev} set={set} commit={commit} work={work.current} />}
         {tab === "crop" && work.current && (
           <CropPanel dev={dev} imgW={work.current.width} imgH={work.current.height} commit={commit} set={set} work={work.current} />
@@ -252,7 +280,7 @@ export function Develop({ id, onBack, clip, setClip }: {
           onPick={(p) => { commit(`Preset: ${p.name}`, pro.applyPreset(devRef.current, p)); flash(p.name); }}
           onSaveCurrent={async (name) => {
             const d = pro.cloneDev(devRef.current);
-            const keep = pro.GROUPS.filter((g) => g.id !== "geometry").flatMap((g) => g.keys).filter((k) => k !== "exposure" && k !== "wbR" && k !== "wbB");
+            const keep = pro.GROUPS.filter((g) => g.id !== "geometry" && g.id !== "masks").flatMap((g) => g.keys).filter((k) => k !== "exposure" && k !== "wbR" && k !== "wbB");
             const partial = Object.fromEntries(keep.map((k) => [k, d[k]])) as Partial<pro.Dev>;
             await pro.catalog.savePreset({ id: pro.catalog.newId("p"), name, group: "Tuyos", dev: partial });
             flash(`Guardado: ${name}`);
@@ -406,7 +434,7 @@ function ProfilePanel({ dev, set, commit, work }: { dev: pro.Dev; set: (p: Parti
 // ------------------------------------------------------------------ copiar ajustes
 function CopySheet({ dev, onCopy, onClose }: { dev: pro.Dev; onCopy: (groups: string[]) => void; onClose: () => void }) {
   const changed = pro.changedGroups(dev);
-  const [on, setOn] = useState<string[]>(changed.filter((g) => g !== "geometry"));
+  const [on, setOn] = useState<string[]>(changed.filter((g) => g !== "geometry" && g !== "masks"));
   return (
     <Sheet title="Copiar ajustes" onClose={onClose}>
       <p class="muted small" style={{ margin: "0 0 8px" }}>Elige qué copiar; luego «Pegar» en otra foto o en varias desde la biblioteca.</p>

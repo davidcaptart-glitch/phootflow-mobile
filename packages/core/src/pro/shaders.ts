@@ -233,3 +233,146 @@ void main() {
   }
   o = vec4(clamp(c, 0.0, 1.0), 1.0);
 }`;
+
+/** Ajustes de UNA máscara sobre la imagen ya revelada (como masks.adjust de escritorio), fundidos con su alfa.
+ * El alfa está en coordenadas de la foto original: se busca con la misma geometría que el revelado. */
+export const PRO_LOCAL = `#version 300 es
+precision highp float;
+in vec2 vUv;
+uniform sampler2D uIn, uAlpha, uSrc, uB1, uBT, uB2, uB3;
+uniform vec4 uCrop;
+uniform float uAspect, uAngle, uZoom, uFlipH, uRot;
+uniform float uBasic[7];     // exposición, contraste, altas luces, sombras, temperatura, matiz, nitidez
+uniform float uPres[5];      // textura, claridad, neblina, intensidad, saturación
+uniform float uCurveZ[4];    // iluminaciones, claros, oscuros, sombras
+uniform vec3 uHslM[8];
+uniform float uGradeM[8];    // sh tono, sh sat, mid tono, mid sat, hi tono, hi sat, fusión, equilibrio
+uniform float uShow;         // ver la máscara en magenta
+uniform float uFlag;         // 1 = hay color/curva que aplicar
+out vec4 o;
+
+const float HUES[8] = float[](0.0, 30.0, 60.0, 120.0, 180.0, 225.0, 270.0, 315.0);
+vec3 toLin(vec3 c) { return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c)); }
+vec3 toSrgb(vec3 c) { c = max(c, 0.0); return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
+float lum(vec3 c) { return dot(c, vec3(0.2126, 0.7152, 0.0722)); }
+vec3 rgb2hsv(vec3 c) {
+  vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+  vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+  vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+  float d = q.x - min(q.w, q.y);
+  return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + 1e-10)), d / (q.x + 1e-10), q.x);
+}
+vec3 hsv2rgb(vec3 c) {
+  vec3 p = abs(fract(c.xxx + vec3(0.0, 2.0 / 3.0, 1.0 / 3.0)) * 6.0 - 3.0);
+  return c.z * mix(vec3(1.0), clamp(p - 1.0, 0.0, 1.0), c.y);
+}
+void bandWeights(float h, out float w[8]) {
+  for (int i = 0; i < 8; i++) w[i] = 0.0;
+  for (int i = 0; i < 8; i++) {
+    float a = HUES[i];
+    float b = i == 7 ? 360.0 : HUES[i + 1];
+    float hh = h < a ? h + 360.0 : h;
+    if (hh >= a && hh < b) { float t = (hh - a) / (b - a); w[i] = 1.0 - t; w[i == 7 ? 0 : i + 1] = t; }
+  }
+}
+vec2 sourceUv(vec2 v) {
+  vec2 q = uCrop.xy + v * uCrop.zw;
+  if (uFlipH > 0.5) q.x = 1.0 - q.x;
+  if (uAngle != 0.0) {
+    vec2 p = (q - 0.5) * vec2(uAspect, 1.0);
+    float ca = cos(uAngle), sa = sin(uAngle);
+    p = mat2(ca, sa, -sa, ca) * p / uZoom;
+    q = p / vec2(uAspect, 1.0) + 0.5;
+  }
+  if (uRot > 2.5) q = vec2(1.0 - q.y, q.x);
+  else if (uRot > 1.5) q = vec2(1.0 - q.x, 1.0 - q.y);
+  else if (uRot > 0.5) q = vec2(q.y, 1.0 - q.x);
+  return q;
+}
+// curva tonal por zonas (como la paramétrica de Studio): cuatro campanas centradas en cada cuarto
+float zoneCurve(float x) {
+  float y = x;
+  y += uCurveZ[0] * 0.22 * smoothstep(0.5, 0.875, x) * (1.0 - smoothstep(0.875, 1.0, x) * 0.6);
+  y += uCurveZ[1] * 0.20 * exp(-pow((x - 0.625) / 0.16, 2.0));
+  y += uCurveZ[2] * 0.20 * exp(-pow((x - 0.375) / 0.16, 2.0));
+  y += uCurveZ[3] * 0.22 * (1.0 - smoothstep(0.125, 0.5, x)) * (smoothstep(0.0, 0.125, x) * 0.6 + 0.4);
+  return y;
+}
+
+void main() {
+  vec3 y = texture(uIn, vec2(vUv.x, 1.0 - vUv.y)).rgb;   // el FBO tiene la fila de abajo primero
+  vec2 uv = sourceUv(vUv);
+  float a = (uv.x < 0.0 || uv.y < 0.0 || uv.x > 1.0 || uv.y > 1.0) ? 0.0 : texture(uAlpha, uv).r;
+  vec3 out3 = y;
+  if (a > 0.001) {
+    // exposición, temperatura y matiz en lineal con hombro suave
+    if (uBasic[0] != 0.0 || uBasic[4] != 0.0 || uBasic[5] != 0.0) {
+      vec3 l = toLin(out3) * exp2(uBasic[0]);
+      vec3 g = vec3(exp2(0.35 * uBasic[4]), exp2(-0.25 * uBasic[5]), exp2(-0.35 * uBasic[4]));
+      l *= g / dot(g, vec3(0.2126, 0.7152, 0.0722));
+      const float k = 0.85;
+      l = mix(l, k + (1.0 - k) * (1.0 - exp(-(l - k) / (1.0 - k))), step(k, l));
+      out3 = toSrgb(l);
+    }
+    float L = lum(out3);
+    vec3 s = texture(uSrc, uv).rgb;
+    float ls = lum(s);
+    float d = 0.0;
+    if (uBasic[1] != 0.0) d += (L * L * (3.0 - 2.0 * L) - L) * uBasic[1];
+    if (uBasic[2] != 0.0) d += pow(clamp((L - 0.45) / 0.55, 0.0, 1.0), 1.5) * 0.35 * uBasic[2];
+    if (uBasic[3] != 0.0) d += pow(clamp(1.0 - L / 0.55, 0.0, 1.0), 1.5) * 0.35 * uBasic[3];
+    if (uPres[1] != 0.0) d += (ls - lum(texture(uB2, uv).rgb)) * 0.9 * uPres[1];
+    if (uPres[0] != 0.0) d += (ls - lum(texture(uBT, uv).rgb)) * 0.8 * uPres[0];
+    if (uBasic[6] != 0.0) d += (ls - lum(texture(uB1, uv).rgb)) * 1.4 * uBasic[6];
+    out3 += d;
+    if (uPres[2] != 0.0) {
+      out3 = clamp(out3, 0.0, 1.0);
+      vec3 b3 = texture(uB3, uv).rgb;
+      float dc = min(min(b3.r, b3.g), b3.b);
+      if (uPres[2] > 0.0) { float v = 0.7 * uPres[2] * dc; out3 = (out3 - v) / max(1.0 - v, 0.25); }
+      else out3 = out3 + (-uPres[2]) * 0.45 * (0.8 - out3) * (0.4 + dc);
+    }
+    if (uPres[4] != 0.0) { float g = lum(out3); out3 = g + (out3 - g) * (1.0 + uPres[4]); }
+    if (uFlag > 0.5) {
+      out3 = clamp(out3, 0.0, 1.0);
+      // curva tonal por zonas
+      out3 = vec3(zoneCurve(out3.r), zoneCurve(out3.g), zoneCurve(out3.b));
+      // mezcla de color
+      vec3 hsv = rgb2hsv(clamp(out3, 0.0, 1.0));
+      float w[8];
+      bandWeights(hsv.x * 360.0, w);
+      vec3 acc = vec3(0.0);
+      for (int i = 0; i < 8; i++) acc += uHslM[i] * w[i];
+      float sw = smoothstep(0.04, 0.25, hsv.y);
+      hsv.x = fract(hsv.x + acc.x * 0.085 * sw);
+      hsv.y = clamp(hsv.y * (1.0 + acc.y * sw), 0.0, 1.0);
+      out3 = hsv2rgb(hsv) * (1.0 + acc.z * 0.45 * sw);
+      // intensidad
+      if (uPres[3] != 0.0) {
+        vec3 h2 = rgb2hsv(clamp(out3, 0.0, 1.0));
+        float k = uPres[3] * (1.0 - h2.y);
+        float Y = dot(out3, vec3(0.299, 0.587, 0.114));
+        out3 = mix(vec3(Y), out3, 1.0 + k);
+      }
+      // gradación por tonos
+      float Y = clamp(lum(out3), 0.0, 1.0);
+      float wid = 0.25 + uGradeM[6] * 0.5, mid = 0.5 + uGradeM[7] * 0.3;
+      float ws = 1.0 - smoothstep(mid - wid, mid, Y), wh = smoothstep(mid, mid + wid, Y), wm = clamp(1.0 - ws - wh, 0.0, 1.0);
+      out3 += ((hsv2rgb(vec3(uGradeM[0], 1.0, 1.0)) - 0.5) * uGradeM[1] * ws
+             + (hsv2rgb(vec3(uGradeM[2], 1.0, 1.0)) - 0.5) * uGradeM[3] * wm
+             + (hsv2rgb(vec3(uGradeM[4], 1.0, 1.0)) - 0.5) * uGradeM[5] * wh) * 0.35;
+    }
+    out3 = clamp(out3, 0.0, 1.0);
+  }
+  vec3 r = mix(y, out3, a);
+  if (uShow > 0.5) r = mix(r, vec3(0.96, 0.05, 0.54), 0.55 * a);
+  o = vec4(r, 1.0);
+}`;
+
+/** Copia una textura a la pantalla (última pasada). */
+export const PRO_COPY = `#version 300 es
+precision highp float;
+in vec2 vUv;
+uniform sampler2D uIn;
+out vec4 o;
+void main() { o = vec4(texture(uIn, vec2(vUv.x, 1.0 - vUv.y)).rgb, 1.0); }`;

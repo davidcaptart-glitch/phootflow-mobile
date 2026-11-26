@@ -2,6 +2,7 @@
 // Todo en las unidades que se ven en los reguladores (−100..100 salvo donde se indica).
 import { autoDevelop } from "../engine/congruence";
 import type { Box, PhotoStats } from "../engine/types";
+import type { LocalMask } from "./masks";
 
 /** Punto de curva (entrada, salida), 0..1. */
 export type CurvePoint = [number, number];
@@ -64,6 +65,8 @@ export interface Dev {
   angle: number;                // grados (−45..45)
   flipH: boolean;
   rotate: 0 | 90 | 180 | 270;
+  // Máscaras (ajustes locales, como Studio de escritorio)
+  masks: LocalMask[];
 }
 
 const LINE: CurvePoint[] = [[0, 0], [1, 1]];
@@ -80,6 +83,7 @@ export const DEFAULT_DEV: Dev = {
   sharpen: 25, sharpenMask: 0, noise: 0, colorNoise: 25,
   vignette: 0, vignetteMid: 50, grain: 0, grainSize: 25,
   crop: { x: 0, y: 0, w: 1, h: 1 }, aspect: "original", angle: 0, flipH: false, rotate: 0,
+  masks: [],
 };
 
 /** Copia profunda (los ajustes se guardan en el historial: nunca se comparten referencias). */
@@ -96,6 +100,7 @@ export function normalizeDev(d: Partial<Dev> | null | undefined): Dev {
   out.grade = { ...base.grade, ...(d.grade ?? {}) };
   if (!Array.isArray(out.hsl) || out.hsl.length !== 8) out.hsl = base.hsl;
   if (!Array.isArray(out.bwMix) || out.bwMix.length !== 8) out.bwMix = base.bwMix;
+  if (!Array.isArray(out.masks)) out.masks = [];
   return out;
 }
 
@@ -209,6 +214,7 @@ export const GROUPS: { id: string; name: string; keys: (keyof Dev)[] }[] = [
   { id: "detail", name: "Detalle", keys: ["sharpen", "sharpenMask", "noise", "colorNoise"] },
   { id: "effects", name: "Efectos", keys: ["vignette", "vignetteMid", "grain", "grainSize"] },
   { id: "geometry", name: "Recorte y giro", keys: ["crop", "aspect", "angle", "flipH", "rotate"] },
+  { id: "masks", name: "Máscaras", keys: ["masks"] },
 ];
 
 /** Copia a `to` los grupos elegidos de `from`. */
@@ -244,4 +250,44 @@ export const BUILTIN_PRESETS: ProPreset[] = [
 /** Aplica un preset: lo que trae sustituye; lo demás (exposición, recorte…) se queda. */
 export function applyPreset(d: Dev, p: ProPreset): Dev {
   return { ...cloneDev(d), ...cloneDev(p.dev as Dev) };
+}
+
+// ------------------------------------------------------------------ geometría: pantalla ↔ foto original
+import { rotateCover } from "../engine/straighten";
+
+/** Punto de la vista (u, v 0..1 sobre lo que se ve; `full` = sin recorte) → punto de la foto original. */
+export function toSource(d: Dev, u: number, v: number, srcW: number, srcH: number, full = false): [number, number] {
+  const c = full ? { x: 0, y: 0, w: 1, h: 1 } : d.crop;
+  let qx = c.x + u * c.w, qy = c.y + v * c.h;
+  if (d.flipH) qx = 1 - qx;
+  const r = rotatedSize(srcW, srcH, d.rotate), A = r.w / r.h;
+  if (d.angle) {
+    const a = (d.angle * Math.PI) / 180, z = rotateCover(d.angle, r.w, r.h);
+    const px = (qx - 0.5) * A, py = qy - 0.5;
+    const rx = (Math.cos(a) * px - Math.sin(a) * py) / z, ry = (Math.sin(a) * px + Math.cos(a) * py) / z;
+    qx = rx / A + 0.5; qy = ry + 0.5;
+  }
+  if (d.rotate === 270) return [1 - qy, qx];
+  if (d.rotate === 180) return [1 - qx, 1 - qy];
+  if (d.rotate === 90) return [qy, 1 - qx];
+  return [qx, qy];
+}
+
+/** Lo contrario: punto de la foto original → punto de la vista (0..1; fuera del recorte sale de 0..1). */
+export function fromSource(d: Dev, sx: number, sy: number, srcW: number, srcH: number, full = false): [number, number] {
+  let qx: number, qy: number;
+  if (d.rotate === 270) { qx = sy; qy = 1 - sx; }
+  else if (d.rotate === 180) { qx = 1 - sx; qy = 1 - sy; }
+  else if (d.rotate === 90) { qx = 1 - sy; qy = sx; }
+  else { qx = sx; qy = sy; }
+  const r = rotatedSize(srcW, srcH, d.rotate), A = r.w / r.h;
+  if (d.angle) {
+    const a = (d.angle * Math.PI) / 180, z = rotateCover(d.angle, r.w, r.h);
+    const rx = (qx - 0.5) * A * z, ry = (qy - 0.5) * z;
+    const px = Math.cos(a) * rx + Math.sin(a) * ry, py = -Math.sin(a) * rx + Math.cos(a) * ry;
+    qx = px / A + 0.5; qy = py + 0.5;
+  }
+  if (d.flipH) qx = 1 - qx;
+  const c = full ? { x: 0, y: 0, w: 1, h: 1 } : d.crop;
+  return [(qx - c.x) / c.w, (qy - c.y) / c.h];
 }

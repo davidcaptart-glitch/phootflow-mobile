@@ -38,6 +38,10 @@ export function Library({ onOpen, clip, onShare }: { onOpen: (id: string) => voi
   };
   useEffect(() => { void reload(); }, []);
 
+  const hero = useMemo(() => {
+    const p = [...photos].sort((a, b) => b.edited - a.edited || b.added - a.added)[0];
+    return p ? urls[`${p.id}:${p.edited}`] : null;
+  }, [photos, urls]);
   const shown = useMemo(() => photos.filter((p) =>
     filter === "all" ? p.flag !== -1
       : filter === "picked" ? p.flag === 1
@@ -69,9 +73,10 @@ export function Library({ onOpen, clip, onShare }: { onOpen: (id: string) => voi
 
   return (
     <div class="screen lib">
-      <div class="topbar">
-        <img src="/mark.png" alt="PhootFlow" class="mark sm" />
-        <div class="title" style={{ alignItems: "flex-start" }}>Biblioteca<span class="sub-t">{photos.length} {photos.length === 1 ? "foto" : "fotos"} · PRO</span></div>
+      <div class={"topbar" + (photos.length ? " over" : "")}>
+        <img src="/mark.png" alt="PhootFlow" class="mark sm" style={{ width: "44px" }} />
+        <span class="badge">PRO</span>
+        <span class="grow" />
         <button class="icon-btn" onClick={onShare} aria-label="Compartir la app"><Icon name="share" size={19} /></button>
         {photos.length > 0 && (
           <button class={"icon-btn" + (sel ? " active" : "")} onClick={() => setSel(sel ? null : [])} aria-label="Seleccionar varias">
@@ -80,13 +85,21 @@ export function Library({ onOpen, clip, onShare }: { onOpen: (id: string) => voi
         )}
       </div>
 
-      {photos.length > 0 && (
-        <div class="chips" style={{ paddingBottom: "8px" }}>
-          {FILTERS.map(([f, n]) => <button class={"chip" + (filter === f ? " on" : "")} onClick={() => setFilter(f)}>{n}</button>)}
-        </div>
-      )}
-
       <div class="scroll">
+        {photos.length > 0 && (
+          <div class="lib-hero" style={hero ? { backgroundImage: `url(${hero})` } : undefined}>
+            <div class="lib-hero-text">
+              <h1>Biblioteca</h1>
+              <p>{photos.length} {photos.length === 1 ? "foto" : "fotos"}{photos.some((p) => p.touched) ? ` · ${photos.filter((p) => p.touched).length} reveladas` : ""}</p>
+            </div>
+          </div>
+        )}
+        {photos.length > 0 && (
+          <div class="chips" style={{ paddingBottom: "8px" }}>
+            {FILTERS.map(([f, n]) => <button class={"chip" + (filter === f ? " on" : "")} onClick={() => setFilter(f)}>{n}</button>)}
+          </div>
+        )}
+
         {loaded && photos.length === 0 && (
           <div class="lib-empty">
             <img src="/mark.png" alt="" class="mark" />
