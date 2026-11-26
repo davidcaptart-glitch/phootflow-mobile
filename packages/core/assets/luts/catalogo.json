@@ -1,0 +1,516 @@
+{
+ "size": 33,
+ "luts": [
+  {
+   "id": "t3mujinpack/AGFA APX 100",
+   "name": "AGFA APX 100",
+   "group": "Película B/N",
+   "file": "00.bin",
+   "bw": true
+  },
+  {
+   "id": "t3mujinpack/AGFA APX 25",
+   "name": "AGFA APX 25",
+   "group": "Película B/N",
+   "file": "01.bin",
+   "bw": true
+  },
+  {
+   "id": "t3mujinpack/Fuji Neopan 1600",
+   "name": "Fuji Neopan 1600",
+   "group": "Película B/N",
+   "file": "02.bin",
+   "bw": true
+  },
+  {
+   "id": "t3mujinpack/Fuji Neopan Acros 100",
+   "name": "Fuji Neopan Acros 100",
+   "group": "Película B/N",
+   "file": "03.bin",
+   "bw": true
+  },
+  {
+   "id": "t3mujinpack/Ilford Delta 100",
+   "name": "Ilford Delta 100",
+   "group": "Película B/N",
+   "file": "04.bin",
+   "bw": true
+  },
+  {
+   "id": "t3mujinpack/Ilford Delta 3200",
+   "name": "Ilford Delta 3200",
+   "group": "Película B/N",
+   "file": "05.bin",
+   "bw": true
+  },
+  {
+   "id": "t3mujinpack/Ilford Delta 400",
+   "name": "Ilford Delta 400",
+   "group": "Película B/N",
+   "file": "06.bin",
+   "bw": true
+  },
+  {
+   "id": "t3mujinpack/Ilford FP4 125",
+   "name": "Ilford FP4 125",
+   "group": "Película B/N",
+   "file": "07.bin",
+   "bw": true
+  },
+  {
+   "id": "t3mujinpack/Ilford HP5 Plus 400",
+   "name": "Ilford HP5 Plus 400",
+   "group": "Película B/N",
+   "file": "08.bin",
+   "bw": true
+  },
+  {
+   "id": "t3mujinpack/Ilford XP2",
+   "name": "Ilford XP2",
+   "group": "Película B/N",
+   "file": "09.bin",
+   "bw": true
+  },
+  {
+   "id": "t3mujinpack/Kodak T-Max 3200",
+   "name": "Kodak T-Max 3200",
+   "group": "Película B/N",
+   "file": "10.bin",
+   "bw": true
+  },
+  {
+   "id": "t3mujinpack/Kodak Tri-X 400",
+   "name": "Kodak Tri-X 400",
+   "group": "Película B/N",
+   "file": "11.bin",
+   "bw": true
+  },
+  {
+   "id": "t3mujinpack/Agfa Vista 100",
+   "name": "Agfa Vista 100",
+   "group": "Película negativo",
+   "file": "12.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Agfa Vista 200",
+   "name": "Agfa Vista 200",
+   "group": "Película negativo",
+   "file": "13.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Agfa Vista 400",
+   "name": "Agfa Vista 400",
+   "group": "Película negativo",
+   "file": "14.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Pro 160C",
+   "name": "Fuji Pro 160C",
+   "group": "Película negativo",
+   "file": "15.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Pro 400H",
+   "name": "Fuji Pro 400H",
+   "group": "Película negativo",
+   "file": "16.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Pro 800Z",
+   "name": "Fuji Pro 800Z",
+   "group": "Película negativo",
+   "file": "17.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Superia 100",
+   "name": "Fuji Superia 100",
+   "group": "Película negativo",
+   "file": "18.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Superia 1600",
+   "name": "Fuji Superia 1600",
+   "group": "Película negativo",
+   "file": "19.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Superia 200",
+   "name": "Fuji Superia 200",
+   "group": "Película negativo",
+   "file": "20.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Superia 400",
+   "name": "Fuji Superia 400",
+   "group": "Película negativo",
+   "file": "21.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Superia 800",
+   "name": "Fuji Superia 800",
+   "group": "Película negativo",
+   "file": "22.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Superia HG 1600",
+   "name": "Fuji Superia HG 1600",
+   "group": "Película negativo",
+   "file": "23.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak ColorPlus 200",
+   "name": "Kodak ColorPlus 200",
+   "group": "Película negativo",
+   "file": "24.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Ektar 100",
+   "name": "Kodak Ektar 100",
+   "group": "Película negativo",
+   "file": "25.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Gold 200",
+   "name": "Kodak Gold 200",
+   "group": "Película negativo",
+   "file": "26.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Portra 160 NC",
+   "name": "Kodak Portra 160 NC",
+   "group": "Película negativo",
+   "file": "27.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Portra 160 VC",
+   "name": "Kodak Portra 160 VC",
+   "group": "Película negativo",
+   "file": "28.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Portra 160",
+   "name": "Kodak Portra 160",
+   "group": "Película negativo",
+   "file": "29.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Portra 400 NC",
+   "name": "Kodak Portra 400 NC",
+   "group": "Película negativo",
+   "file": "30.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Portra 400 UC",
+   "name": "Kodak Portra 400 UC",
+   "group": "Película negativo",
+   "file": "31.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Portra 400 VC",
+   "name": "Kodak Portra 400 VC",
+   "group": "Película negativo",
+   "file": "32.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Portra 400",
+   "name": "Kodak Portra 400",
+   "group": "Película negativo",
+   "file": "33.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Portra 800",
+   "name": "Kodak Portra 800",
+   "group": "Película negativo",
+   "file": "34.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Ultra Max 400",
+   "name": "Kodak Ultra Max 400",
+   "group": "Película negativo",
+   "file": "35.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Astia 100F",
+   "name": "Fuji Astia 100F",
+   "group": "Película diapositiva",
+   "file": "36.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Fortia SP 50",
+   "name": "Fuji Fortia SP 50",
+   "group": "Película diapositiva",
+   "file": "37.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Provia 100F",
+   "name": "Fuji Provia 100F",
+   "group": "Película diapositiva",
+   "file": "38.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Provia 400F",
+   "name": "Fuji Provia 400F",
+   "group": "Película diapositiva",
+   "file": "39.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Provia 400X",
+   "name": "Fuji Provia 400X",
+   "group": "Película diapositiva",
+   "file": "40.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Sensia 100",
+   "name": "Fuji Sensia 100",
+   "group": "Película diapositiva",
+   "file": "41.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Velvia 100",
+   "name": "Fuji Velvia 100",
+   "group": "Película diapositiva",
+   "file": "42.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Fuji Velvia 50",
+   "name": "Fuji Velvia 50",
+   "group": "Película diapositiva",
+   "file": "43.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Ektachrome 100 G",
+   "name": "Kodak Ektachrome 100 G",
+   "group": "Película diapositiva",
+   "file": "44.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Ektachrome 100 GX",
+   "name": "Kodak Ektachrome 100 GX",
+   "group": "Película diapositiva",
+   "file": "45.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Ektachrome 100 VS",
+   "name": "Kodak Ektachrome 100 VS",
+   "group": "Película diapositiva",
+   "file": "46.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Elite Chrome 400",
+   "name": "Kodak Elite Chrome 400",
+   "group": "Película diapositiva",
+   "file": "47.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Kodakchrome 200",
+   "name": "Kodak Kodakchrome 200",
+   "group": "Película diapositiva",
+   "file": "48.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Kodakchrome 25",
+   "name": "Kodak Kodakchrome 25",
+   "group": "Película diapositiva",
+   "file": "49.bin",
+   "bw": false
+  },
+  {
+   "id": "t3mujinpack/Kodak Kodakchrome 64",
+   "name": "Kodak Kodakchrome 64",
+   "group": "Película diapositiva",
+   "file": "50.bin",
+   "bw": false
+  },
+  {
+   "id": "street-monochrome/Eerie",
+   "name": "Eerie",
+   "group": "B/N de calle",
+   "file": "51.bin",
+   "bw": true
+  },
+  {
+   "id": "street-monochrome/Flat",
+   "name": "Flat",
+   "group": "B/N de calle",
+   "file": "52.bin",
+   "bw": true
+  },
+  {
+   "id": "street-monochrome/Landscape",
+   "name": "Landscape",
+   "group": "B/N de calle",
+   "file": "53.bin",
+   "bw": true
+  },
+  {
+   "id": "street-monochrome/Standard",
+   "name": "Standard",
+   "group": "B/N de calle",
+   "file": "54.bin",
+   "bw": true
+  },
+  {
+   "id": "slay/Amber",
+   "name": "Amber",
+   "group": "slay",
+   "file": "55.bin",
+   "bw": false
+  },
+  {
+   "id": "slay/Fade",
+   "name": "Fade",
+   "group": "slay",
+   "file": "56.bin",
+   "bw": false
+  },
+  {
+   "id": "slay/Neon",
+   "name": "Neon",
+   "group": "slay",
+   "file": "57.bin",
+   "bw": false
+  },
+  {
+   "id": "slay/Film",
+   "name": "Film",
+   "group": "slay",
+   "file": "58.bin",
+   "bw": false
+  },
+  {
+   "id": "slay/Portrait",
+   "name": "Portrait",
+   "group": "slay",
+   "file": "59.bin",
+   "bw": false
+  },
+  {
+   "id": "rodaje/alto-contraste",
+   "name": "Alto contraste",
+   "group": "Looks",
+   "file": "60.bin",
+   "bw": false
+  },
+  {
+   "id": "rodaje/blanco-y-negro",
+   "name": "Blanco y negro",
+   "group": "Looks",
+   "file": "61.bin",
+   "bw": true
+  },
+  {
+   "id": "rodaje/calido",
+   "name": "Cálido",
+   "group": "Looks",
+   "file": "62.bin",
+   "bw": false
+  },
+  {
+   "id": "rodaje/cian-suave",
+   "name": "Cian suave",
+   "group": "Looks",
+   "file": "63.bin",
+   "bw": false
+  },
+  {
+   "id": "rodaje/cine",
+   "name": "Cine",
+   "group": "Looks",
+   "file": "64.bin",
+   "bw": false
+  },
+  {
+   "id": "rodaje/desvaido",
+   "name": "Desvaído",
+   "group": "Looks",
+   "file": "65.bin",
+   "bw": false
+  },
+  {
+   "id": "rodaje/frio",
+   "name": "Frío",
+   "group": "Looks",
+   "file": "66.bin",
+   "bw": false
+  },
+  {
+   "id": "rodaje/noche",
+   "name": "Noche",
+   "group": "Looks",
+   "file": "67.bin",
+   "bw": false
+  },
+  {
+   "id": "rodaje/pastel",
+   "name": "Pastel",
+   "group": "Looks",
+   "file": "68.bin",
+   "bw": false
+  },
+  {
+   "id": "rodaje/plata",
+   "name": "Plata",
+   "group": "Looks",
+   "file": "69.bin",
+   "bw": false
+  },
+  {
+   "id": "rodaje/sepia",
+   "name": "Sepia",
+   "group": "Looks",
+   "file": "70.bin",
+   "bw": false
+  },
+  {
+   "id": "rodaje/verde-azulado-naranja",
+   "name": "Verde azulado y naranja",
+   "group": "Looks",
+   "file": "71.bin",
+   "bw": false
+  },
+  {
+   "id": "rodaje/vivo",
+   "name": "Vivo",
+   "group": "Looks",
+   "file": "72.bin",
+   "bw": false
+  }
+ ]
+}

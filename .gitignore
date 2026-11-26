@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.local
+.env
+*.env
+# Android / iOS (Capacitor) cuando existan
+android/app/build/
+ios/App/Pods/
+
+# modelos de IA servidos por la app (los deja tools/modelos.py)
+apps/*/public/modelos/

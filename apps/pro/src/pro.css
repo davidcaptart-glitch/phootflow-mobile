@@ -1,0 +1,8 @@
+.pro .stage { flex: 1; min-height: 0; display: grid; place-items: center; overflow: hidden; }
+.pro .stage canvas { display: block; border-radius: 4px; }
+.pro .empty { text-align: center; padding: 30px; display: grid; gap: 12px; justify-items: center; }
+.pro .panel { max-height: 40vh; overflow-y: auto; padding-top: 6px; }
+@media (min-width: 700px) {
+  body { background: #000; }
+  .screen { left: 50%; right: auto; width: 430px; transform: translateX(-50%); border-left: 1px solid var(--line); border-right: 1px solid var(--line); background: var(--bg); }
+}
