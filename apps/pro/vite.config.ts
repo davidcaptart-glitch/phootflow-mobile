@@ -3,7 +3,8 @@ import preact from "@preact/preset-vite";
 import { VitePWA } from "vite-plugin-pwa";
 import pkg from "./package.json";
 
-export default defineConfig({
+// `vite build --mode native` (npm run build:native): para Capacitor, sin service worker ni manifiesto de PWA.
+export default defineConfig(({ mode }) => ({
   // una sola versión: la del package.json (aviso de actualización, «Novedades» y licencia)
   define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   server: { port: 5174, fs: { allow: ["../.."] } },
@@ -11,6 +12,7 @@ export default defineConfig({
   plugins: [
     preact(),
     VitePWA({
+      disable: mode === "native",
       // «prompt»: la versión nueva se descarga y espera; la app decide cuándo pasar a ella sin perder trabajo
       // (@phootflow/core updates/pwa.ts registra /sw.js, por eso no se inyecta el registro)
       registerType: "prompt",
@@ -47,4 +49,4 @@ export default defineConfig({
       },
     }),
   ],
-});
+}));

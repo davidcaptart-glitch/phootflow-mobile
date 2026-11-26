@@ -3,9 +3,28 @@ dist/
 *.local
 .env
 *.env
-# Android / iOS (Capacitor) cuando existan
-android/app/build/
-ios/App/Pods/
+# Android / iOS (Capacitor): builds y copias de la web (cada android/ e ios/ tiene además su propio .gitignore)
+apps/*/android/.gradle/
+apps/*/android/build/
+apps/*/android/app/build/
+apps/*/android/local.properties
+apps/*/android/app/src/main/assets/public/
+apps/*/android/app/src/main/assets/capacitor.*.json
+apps/*/android/capacitor-cordova-android-plugins/
+apps/*/android/app/release/
+apps/*/ios/App/build/
+apps/*/ios/App/Pods/
+apps/*/ios/App/App/public/
+apps/*/ios/DerivedData/
+*.apk
+*.aab
+# firmas de las tiendas: NUNCA en el repo (es público)
+*.jks
+*.keystore
+keystore.properties
+*.p8
+*.p12
+*.mobileprovision
 
 # modelos de IA servidos por la app (los deja tools/modelos.py)
 apps/*/public/modelos/

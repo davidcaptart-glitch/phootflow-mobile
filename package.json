@@ -3,14 +3,20 @@
   "private": true,
   "version": "0.1.0",
   "description": "PhootFlow Lite y Pro: apps móviles (PWA hoy, Android/iOS nativas con Capacitor mañana) sobre una base común.",
-  "workspaces": ["packages/*", "apps/*"],
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
     "dev:lite": "npm run dev -w @phootflow/lite",
     "dev:pro": "npm run dev -w @phootflow/pro",
     "build": "npm run build -w @phootflow/lite && npm run build -w @phootflow/pro",
     "test": "vitest run",
     "typecheck": "tsc -p packages/core && tsc -p apps/lite && tsc -p apps/pro",
-    "luts": "python tools/exportar_luts.py"
+    "luts": "python tools/exportar_luts.py",
+    "android:lite": "npm run android -w @phootflow/lite",
+    "android:pro": "npm run android -w @phootflow/pro",
+    "cap:sync": "npm run cap:sync -w @phootflow/lite && npm run cap:sync -w @phootflow/pro"
   },
   "devDependencies": {
     "typescript": "^5.6.0",

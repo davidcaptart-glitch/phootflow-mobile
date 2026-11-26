@@ -3,7 +3,7 @@
 // Hoy se activa con clave (PF-…). En las apps nativas, el proveedor «tienda» manda el recibo de la compra
 // y el servidor devuelve el mismo token: la comprobación de aquí no cambia (ver LICENCIAS.md, escritorio).
 import * as ed from "@noble/ed25519";
-import { platform } from "../platform";
+import { platform, type StorePurchase } from "../platform";
 
 export type Product = "lite" | "pro";
 
@@ -121,6 +121,35 @@ export async function activate(product: Product, clave: string, version: string)
     if (e instanceof LicenseError) throw e;
     throw new LicenseError("No hay conexión con el servidor de licencias. Para activar hace falta internet una vez.");
   }
+}
+
+/** Apps nativas: cambia una compra de la tienda (platform.purchase / restorePurchases) por la licencia de siempre.
+ *  El servidor valida el recibo (`accion: "compra"`), crea o recupera la licencia (origen = tienda, compra_ref) y
+ *  devuelve el mismo token firmado; a partir de ahí todo funciona igual que con una clave. */
+export async function activateWithPurchase(product: Product, compra: StorePurchase, version: string,
+  server = SERVER): Promise<Status> {
+  let res: { code: number; body: any };
+  try {
+    res = await post({
+      accion: "compra", tienda: compra.store, recibo: compra.receipt, producto: compra.product,
+      huella: await platform.deviceId(), nombre: platform.deviceName(), version,
+    }, server);
+  } catch {
+    throw new LicenseError("No hay conexión con el servidor de licencias. Tu compra está hecha: vuelve a intentarlo con internet («Restaurar compras»).");
+  }
+  const { code, body } = res;
+  const t = code === 200 ? await decodeToken(body.token) : null;
+  if (t) {
+    const d = (await platform.kvGet<Saved>(STORE)) ?? {};
+    const now = Date.now() / 1000;
+    await platform.kvSet<Saved>(STORE, { clave: t.clave, token: body.token, visto: Math.max(d.visto ?? 0, now) });
+    return evaluate(product);
+  }
+  if (code === 409)
+    throw new LicenseError(`Esta compra ya está en uso en otro dispositivo. Si has cambiado de móvil, habla con ${CONTACTO}.`);
+  if (code === 402 || code === 403)
+    throw new LicenseError("La tienda no ha confirmado la compra. Si se ha cobrado, prueba «Restaurar compras» en un rato.");
+  throw new LicenseError(`El servidor no ha aceptado la compra (${code}). Tu compra está hecha: prueba «Restaurar compras» más tarde.`);
 }
 
 /** Comprueba en línea si se puede; sin red, decide con el último token guardado. */

@@ -3,7 +3,36 @@
   "version": "0.2.0",
   "private": true,
   "type": "module",
-  "scripts": { "dev": "vite --host", "build": "vite build", "preview": "vite preview --host" },
-  "dependencies": { "@phootflow/core": "*", "preact": "^10.24.0" },
-  "devDependencies": { "@preact/preset-vite": "^2.9.0", "vite": "^5.4.0", "vite-plugin-pwa": "^0.20.0" }
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "build:native": "vite build --mode native",
+    "cap:sync": "npm run build:native && cap sync",
+    "android": "npm run cap:sync && cap open android",
+    "ios": "npm run cap:sync && cap open ios",
+    "assets": "capacitor-assets generate --assetPath assets --iconBackgroundColor #05070f --iconBackgroundColorDark #05070f --splashBackgroundColor #05070f --splashBackgroundColorDark #05070f"
+  },
+  "dependencies": {
+    "@capacitor-community/media": "^9.1.0",
+    "@capacitor/android": "^8.6.3",
+    "@capacitor/camera": "^8.2.6",
+    "@capacitor/core": "^8.6.3",
+    "@capacitor/device": "^8.0.3",
+    "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/ios": "^8.6.3",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/share": "^8.0.3",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@phootflow/core": "*",
+    "@revenuecat/purchases-capacitor": "^14.2.0",
+    "preact": "^10.24.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^4.0.0",
+    "@capacitor/cli": "^8.6.3",
+    "@preact/preset-vite": "^2.9.0",
+    "vite": "^5.4.0",
+    "vite-plugin-pwa": "^0.20.0"
+  }
 }
