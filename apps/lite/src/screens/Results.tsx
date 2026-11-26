@@ -4,6 +4,7 @@ import { Icon } from "@phootflow/core/ui";
 import { ENHANCE_AMOUNT, Renderer, decode, peopleAI, type FaceRef, type Person, enhance, enhanceReady, formatById, platform, shrink, toJpeg, type Look, type Photo, type Pixels, type Session } from "@phootflow/core";
 import { saveExports, saveSession } from "../saving";
 import { BeforeAfter } from "../BeforeAfter";
+import { CropAdjust } from "../CropAdjust";
 import { Remove } from "./Remove";
 import type { Tools } from "./Choose";
 
@@ -22,9 +23,18 @@ export function Results({ session, look, tools, onBack, onDesign, onRestart }: {
   const [big, setBig] = useState<{ before: string; after: string | null } | null>(null);
   const [enhBusy, setEnhBusy] = useState("");
   const [, setTick] = useState(0);
-  const [people, setPeople] = useState<Person[] | null>(null);
-  const [names, setNames] = useState<Record<string, string>>({});
+  // personas: viven en la sesión y se guardan con ella (nombres y uniones a mano incluidos)
+  const [people, setPeopleState] = useState<Person[] | null>(session.people);
+  const setPeople = (ps: Person[] | null) => {
+    session.people = ps;
+    setPeopleState(ps);
+    saveSession(session, look, tools).catch(() => {});
+  };
   const [who, setWho] = useState<string | null>(null);
+  const [merging, setMerging] = useState(false);
+  const [full, setFull] = useState<{ url: string; ratio: number } | null>(null);
+  const [cropping, setCropping] = useState(false);
+  const dirty = useRef<Set<string> | null>(null);
   const person = people?.find((x) => x.id === who) ?? null;
   const shownPhotos = person ? session.photos.filter((p) => person.photoIds.includes(p.id)) : session.photos;
 
@@ -37,7 +47,7 @@ export function Results({ session, look, tools, onBack, onDesign, onRestart }: {
         const img = await decode(list[i].blob, 900);
         faces.push(...(await peopleAI.faceRefs(img, list[i].id)));
       }
-      const ps = peopleAI.people(faces, names);
+      const ps = peopleAI.people(faces);
       setPeople(ps);
       setBusy(null);
       flash(ps.length ? `${ps.length} ${ps.length === 1 ? "persona" : "personas"} en varias fotos` : "No hay caras que se repitan en varias fotos.");
@@ -51,10 +61,11 @@ export function Results({ session, look, tools, onBack, onDesign, onRestart }: {
 
   const openPhoto = async (p: Photo) => {
     if (!p.stats || !r.current) return;
-    setOpen(p); setBig(null);
+    setOpen(p); setBig(null); setFull(null);
     const rr = new Renderer();
     try {
       const out = await session.renderedPixels(rr, { ...p, enhance: false }, look, 900);
+      setFull({ url: URL.createObjectURL(await toJpeg(out, 0.88)), ratio: out.width / out.height });
       const crop = fmt ? session.cropFor(p, fmt) : null;
       const shown = crop ? cropPixels(out, crop) : out;
       const before = URL.createObjectURL(await toJpeg(shown, 0.88));
@@ -87,7 +98,11 @@ export function Results({ session, look, tools, onBack, onDesign, onRestart }: {
     let alive = true;
     (async () => {
       r.current ??= new Renderer();
+      // tras retocar una foto, solo se rehace la suya
+      const only = dirty.current;
+      dirty.current = null;
       for (const p of session.photos) {
+        if (only && !only.has(p.id)) continue;
         await session.analyze(p);
         if (!alive) return;
         if (!p.stats || !p.thumb) continue;
@@ -157,13 +172,15 @@ export function Results({ session, look, tools, onBack, onDesign, onRestart }: {
                 <span class="av all">Todas</span><span class="pname">{session.photos.length} fotos</span>
               </button>
               {people.map((p) => (
-                <button class={"person" + (who === p.id ? " on" : "")} onClick={() => {
-                  if (who === p.id) {
-                    const n = prompt("Nombre de esta persona:", names[p.id] ?? "");
-                    if (n?.trim()) { setNames({ ...names, [p.id]: n.trim() }); p.name = n.trim(); }
-                  } else setWho(p.id);
+                <button class={"person" + (who === p.id ? " on" : "") + (merging && who !== p.id ? " target" : "")} onClick={() => {
+                  if (merging && who && who !== p.id) {
+                    const a = people.find((x) => x.id === who)!;
+                    setPeople(peopleAI.mergePeople(people, who, p.id));
+                    setMerging(false);
+                    flash(`Unidas: ahora ${a.named ? a.name : p.named ? p.name : "es una sola persona"}`);
+                  } else { setMerging(false); setWho(who === p.id ? null : p.id); }
                 }}>
-                  <img class="av" src={coverUrl(p)} />
+                  {p.cover ? <img class="av" src={coverUrl(p)} alt="" /> : <span class="av"><Icon name="people" size={22} /></span>}
                   <span class="pname">{p.name}</span>
                   <span class="pcount">{p.photoIds.length} fotos</span>
                 </button>
@@ -171,7 +188,18 @@ export function Results({ session, look, tools, onBack, onDesign, onRestart }: {
             </>
           )}
         </div>
-        {person && <p class="hint">Fotos de {person.name}. Vuelve a tocar su cara para ponerle nombre.</p>}
+        {person && (
+          <div class="person-bar">
+            <input key={person.id} value={person.named ? person.name : ""} placeholder={`Nombre (${person.name})`} aria-label="Nombre de esta persona"
+              enterKeyHint="done" maxLength={40}
+              onChange={(e) => setPeople(peopleAI.renamePerson(people!, person.id, (e.target as HTMLInputElement).value))}
+              onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }} />
+            {people!.length > 1 && (
+              <button class={"chip" + (merging ? " on" : "")} onClick={() => setMerging(!merging)}><Icon name="merge" size={16} />{merging ? "Cancelar" : "Unir"}</button>
+            )}
+          </div>
+        )}
+        {person && <p class="hint">{merging ? `Toca la otra cara de ${person.name}: se juntarán en una sola persona.` : `Fotos de ${person.name}. Si la IA la ha separado en dos, usa «Unir».`}</p>}
         <div class="grid">
           {shownPhotos.map((p) => (
             <button class="cell" style={{ aspectRatio: fmt ? String(formatById(fmt).ratio) : "1" }} onClick={() => openPhoto(p)}>
@@ -224,6 +252,13 @@ export function Results({ session, look, tools, onBack, onDesign, onRestart }: {
               </label>
             </div>
             <p class="hint">{enhBusy || "Recupera nitidez y quita ruido. Tarda unos segundos por foto: úsalo en las que lo necesiten."}</p>
+            {look.formats.length > 0 && (
+              <div style={{ padding: "4px 16px 0" }}>
+                <button class="btn block sm" disabled={!!enhBusy || !full} onClick={() => setCropping(true)}>
+                  <Icon name="crop" size={18} />Ajustar el encuadre{Object.keys(open.cropOverride).length ? " (retocado)" : ""}
+                </button>
+              </div>
+            )}
             <div style={{ padding: "4px 16px 0" }}>
               <button class="btn block sm" disabled={!!enhBusy} onClick={() => { setRemoving(open); setOpen(null); }}>
                 <Icon name="eraser" size={18} />Quitar objetos o personas{open.originalBlob ? " (retocada)" : ""}
@@ -254,11 +289,26 @@ export function Results({ session, look, tools, onBack, onDesign, onRestart }: {
           </div>
         </div>
       )}
+      {cropping && open && full && (
+        <CropAdjust src={full.url} imgRatio={full.ratio} formats={look.formats} initial={open.cropOverride}
+          auto={(f) => { const o = open.cropOverride[f]; delete open.cropOverride[f]; const c = session.cropFor(open, f); if (o) open.cropOverride[f] = o; return c; }}
+          onClose={() => setCropping(false)}
+          onSave={(crops) => {
+            const p = open;
+            for (const [f, b] of Object.entries(crops)) { if (b) p.cropOverride[f] = b; else delete p.cropOverride[f]; }
+            setCropping(false);
+            dirty.current = new Set([p.id]);
+            setRedo((n) => n + 1);
+            saveSession(session, look, tools).catch(() => {});
+            openPhoto(p);
+            flash("Encuadre guardado: se usará al exportar");
+          }} />
+      )}
       {removing && (
         <Remove session={session} photo={removing} onClose={(changed) => {
           const p = removing;
           setRemoving(null);
-          if (changed) { setPreviews((x) => { const y = { ...x }; delete y[p.id]; return y; }); setRedo((n) => n + 1); flash("Foto retocada: se aplica a todas sus versiones"); }
+          if (changed) { setPreviews((x) => { const y = { ...x }; delete y[p.id]; return y; }); dirty.current = new Set([p.id]); setRedo((n) => n + 1); flash("Foto retocada: se aplica a todas sus versiones"); }
         }} />
       )}
       {toast && <div class="toast">{toast}</div>}

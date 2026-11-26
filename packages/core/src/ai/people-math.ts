@@ -49,6 +49,27 @@ export function people(faces: FaceRef[], names: Record<string, string> = {}): Pe
   return cluster(faces).filter((g) => new Set(g.map((f) => f.photoId)).size >= 2).map((g, i) => {
     const cover = g.slice().sort((a, b) => b.size - a.size)[0];
     const id = `p${i + 1}`;
-    return { id, name: names[id] ?? `Persona ${i + 1}`, faces: g, photoIds: [...new Set(g.map((f) => f.photoId))], cover: cover.thumb };
+    return { id, name: names[id] ?? `Persona ${i + 1}`, named: id in names, faces: g, photoIds: [...new Set(g.map((f) => f.photoId))], cover: cover.thumb };
   });
+}
+
+/** Une a mano dos personas que la IA ha separado (`from` pasa a `into`). Se queda el nombre puesto por el usuario,
+ *  la cara más grande de portada y las fotos de las dos. */
+export function mergePeople(list: Person[], into: string, from: string): Person[] {
+  const a = list.find((p) => p.id === into), b = list.find((p) => p.id === from);
+  if (!a || !b || a === b) return list;
+  const faces = [...a.faces, ...b.faces];
+  const big = faces.slice().sort((x, y) => y.size - x.size)[0];
+  const keep = a.named || !b.named ? a : b;
+  const merged: Person = {
+    id: a.id, name: keep.name, named: !!keep.named, faces,
+    photoIds: [...new Set([...a.photoIds, ...b.photoIds])], cover: big?.thumb ?? a.cover ?? b.cover,
+  };
+  return list.filter((p) => p !== b).map((p) => (p === a ? merged : p));
+}
+
+/** Pone nombre a una persona (vacío = vuelve a «Persona N»). */
+export function renamePerson(list: Person[], id: string, name: string): Person[] {
+  const n = name.trim();
+  return list.map((p, i) => (p.id !== id ? p : { ...p, name: n || `Persona ${i + 1}`, named: !!n }));
 }

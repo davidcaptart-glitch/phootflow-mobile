@@ -44,6 +44,9 @@ const P: Record<string, JSX.Element> = {
   home: <path d="M3 10.5 12 3l9 7.5V21H3z" />,
   rotateL: <><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></>,
   rotateR: <><path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 4v5h-5" /></>,
+  alert: <><path d="M12 4 2.5 20h19z" /><path d="M12 10v4.5M12 17.2v.3" /></>,
+  move: <><path d="M12 3v18M3 12h18" /><path d="m9 6 3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" /></>,
+  merge: <><circle cx="7" cy="8" r="3" /><circle cx="17" cy="8" r="3" /><path d="M7 11v2a5 5 0 0 0 5 5 5 5 0 0 0 5-5v-2M12 18v3" /></>,
   flip: <><path d="M12 3v18" /><path d="M8 7 3 12l5 5z" /><path d="m16 7 5 5-5 5z" /></>,
 };
 

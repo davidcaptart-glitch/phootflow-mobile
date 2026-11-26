@@ -20,6 +20,8 @@ export async function saveSession(session: Session, look: Look, tools: Tools) {
     created: session.created, updated: Date.now(), look, tools: { ...tools },
     photoIds: ok.map((p) => p.id), guideId: session.guideId,
     cover: guide?.thumb ? await toJpeg(guide.thumb, 0.8) : null,
+    people: session.people,
+    crops: Object.fromEntries(ok.filter((p) => Object.keys(p.cropOverride).length).map((p) => [p.id, { ...p.cropOverride }])),
   });
 }
 
@@ -61,6 +63,10 @@ export async function openSession(id: string): Promise<{ session: Session; look:
   session.created = s.created;
   session.add(photos.map((p) => ({ id: p.id, name: p.name, blob: p.original })));
   session.guideId = s.guideId && photos.some((p) => p.id === s.guideId) ? s.guideId : photos[0]?.id ?? null;
+  for (const p of session.photos) p.cropOverride = { ...(s.crops?.[p.id] ?? {}) };
+  // las personas con sus nombres y uniones, sin las fotos que ya no estén
+  const ids = new Set(photos.map((p) => p.id));
+  session.people = s.people?.map((x) => ({ ...x, photoIds: x.photoIds.filter((id) => ids.has(id)), faces: x.faces.filter((f) => ids.has(f.photoId)) })) ?? null;
   const tools = s.tools as unknown as Tools;
   session.needSegmentation = !!(tools.bokeh || tools.beauty || tools.splash);
   session.needObjects = !!tools.splash;

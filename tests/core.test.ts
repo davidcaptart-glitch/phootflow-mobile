@@ -243,7 +243,8 @@ describe("enderezar automático", () => {
   });
 });
 
-import { cluster, similarity } from "../packages/core/src/ai/people-math";
+import { cluster, mergePeople, people as groupPeople, renamePerson, similarity } from "../packages/core/src/ai/people-math";
+import { dhash, hamming, reviewPhotos, sharpness } from "../packages/core/src/engine/analyze";
 
 describe("personas", () => {
   it("la semejanza lleva los 5 puntos a la plantilla", () => {
@@ -265,5 +266,78 @@ describe("personas", () => {
     const B = (p: string, d = 0) => ({ photoId: p, emb: v(0, 1, d), thumb: null, size: 0.1 });
     const g = cluster([A("1"), A("2", 0.1), B("1"), B("3", 0.2), A("3", 0.05)]);
     expect(g.map((x) => x.map((f) => f.photoId).sort().join())).toEqual(["1,2,3", "1,3"]);
+  });
+});
+
+describe("personas a mano", () => {
+  const v = (...xs: number[]) => { const e = Float32Array.from(xs); const n = Math.hypot(...xs); return e.map((x) => x / n); };
+  const F = (p: string, e: Float32Array, size = 0.1) => ({ photoId: p, emb: e, thumb: null, size });
+  // la misma persona con dos caras muy distintas (la IA la separa en dos)
+  const faces = [F("1", v(1, 0, 0)), F("2", v(1, 0.1, 0)), F("3", v(0, 0, 1), 0.3), F("4", v(0, 0.1, 1))];
+
+  it("une dos personas y conserva el nombre puesto a mano", () => {
+    let ps = groupPeople(faces);
+    expect(ps.length).toBe(2);
+    ps = renamePerson(ps, ps[1].id, "  Ana ");
+    expect(ps[1]).toMatchObject({ name: "Ana", named: true });
+    const m = mergePeople(ps, ps[0].id, ps[1].id);
+    expect(m.length).toBe(1);
+    expect(m[0].name).toBe("Ana");
+    expect(m[0].photoIds.sort()).toEqual(["1", "2", "3", "4"]);
+    expect(m[0].faces.length).toBe(4);
+  });
+
+  it("quitar el nombre vuelve a «Persona N»", () => {
+    const ps = renamePerson(renamePerson(groupPeople(faces), "p1", "Luis"), "p1", " ");
+    expect(ps[0]).toMatchObject({ name: "Persona 1", named: false });
+  });
+});
+
+describe("revisar antes de editar", () => {
+  /** Escena sintética: franjas y cuadros con bordes nítidos; `blur` la emborrona (caja de radio blur). */
+  function scene(w: number, h: number, seed: number, blur = 0) {
+    const L = new Float32Array(w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++)
+      // fondo en degradado con la dirección de la semilla, un bloque claro en otro sitio y rayas finas (bordes)
+      L[y * w + x] = 60 + 70 * Math.sin((x * Math.cos(seed) + y * Math.sin(seed)) / 14)
+        + (Math.abs(x - ((seed * 37) % w)) < 16 && Math.abs(y - ((seed * 23) % h)) < 14 ? 80 : 0) + 25 * ((x >> 1) % 2);
+    let out = L;
+    for (let k = 0; k < (blur ? 3 : 0); k++) {
+      const t = new Float32Array(w * h);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        let s = 0, n = 0;
+        for (let d = -blur; d <= blur; d++) { const xx = Math.min(w - 1, Math.max(0, x + d)); s += out[y * w + xx]; n++; }
+        t[y * w + x] = s / n;
+      }
+      out = t;
+    }
+    const px = new Uint8ClampedArray(w * h * 4);
+    for (let i = 0; i < w * h; i++) { px[i * 4] = px[i * 4 + 1] = px[i * 4 + 2] = out[i]; px[i * 4 + 3] = 255; }
+    return px;
+  }
+  const W = 96, H = 72;
+  const item = (id: string, px: Uint8ClampedArray) => ({ id, hash: dhash(px, W, H), sharp: sharpness(px, W, H) });
+
+  it("una foto movida es mucho menos nítida", () => {
+    expect(sharpness(scene(W, H, 3, 4), W, H)).toBeLessThan(sharpness(scene(W, H, 3), W, H) * 0.35);
+  });
+
+  it("detecta repetidas y movidas y sugiere quitar las peores", () => {
+    const a = scene(W, H, 1), a2 = scene(W, H, 1).map((x, i) => (i % 4 === 3 ? 255 : Math.min(255, x + 6)));
+    const b = scene(W, H, 2), c = scene(W, H, 3), cBlur = scene(W, H, 5, 4);
+    expect(hamming(dhash(a, W, H), dhash(a2, W, H))).toBeLessThanOrEqual(2);
+    expect(hamming(dhash(a, W, H), dhash(b, W, H))).toBeGreaterThan(6);
+    const r = reviewPhotos([item("a", a), item("a2", a2), item("b", b), item("c", c), item("m", cBlur)]);
+    expect(r.duplicates.length).toBe(1);
+    expect(r.duplicates[0].sort()).toEqual(["a", "a2"]);
+    expect(r.blurry).toEqual(["m"]);
+    expect(r.suggest).toContain("m");
+    expect(r.suggest.filter((x) => x === "a" || x === "a2").length).toBe(1);
+  });
+
+  it("nunca sugiere quitarlas todas", () => {
+    const a = scene(W, H, 1);
+    const r = reviewPhotos([item("x", a), item("y", a), item("z", a)]);
+    expect(r.suggest.length).toBe(2);
   });
 });
