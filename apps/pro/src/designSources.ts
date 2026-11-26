@@ -57,6 +57,7 @@ export function proSources(initial: Asset[] = [], own: Asset[] = []): DesignSour
       empty: "Todavía no hay fotos en la biblioteca: impórtalas en Revelar.",
     },
     save: async () => { /* Pro no guarda copias aparte: se comparten o se descargan */ },
+    pro: true,
   };
 }
 

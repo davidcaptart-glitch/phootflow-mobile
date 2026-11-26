@@ -65,6 +65,8 @@ const P: Record<string, JSX.Element> = {
   up: <path d="m6 15 6-6 6 6" />,
   down: <path d="m6 9 6 6 6-6" />,
   target: <><circle cx="12" cy="12" r="7" /><path d="M12 2v5M12 17v5M2 12h5M17 12h5" /></>,
+  lock: <><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>,
+  unlock: <><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 7.5-2" /></>,
   person: <><circle cx="12" cy="7.5" r="3.5" /><path d="M5 21c.9-4.2 3.6-7 7-7s6.1 2.8 7 7" /></>,
 };
 

@@ -104,12 +104,22 @@ void main() {
   // Belleza: separación de frecuencias solo en la piel (el desenfoque solo mezcla piel con piel)
   if (uBeauty > 0.0) {
     float m = smoothstep(0.35, 0.75, texture(uSkin, uv).r);
+    // ojos, iris y boca (puntos de la cara, si se han calculado) no se suavizan nunca
+    vec4 fp = texture(uFace, uv);
+    m *= 1.0 - smoothstep(0.05, 0.4, max(max(fp.r, fp.g), fp.b));
     vec4 b = texture(uBlurS, uv);
     vec3 smoothSkin = b.a > 0.02 ? b.rgb / b.a : s;
     vec3 detail = s - smoothSkin;
-    vec3 r = smoothSkin + detail * (1.0 - 0.8 * uBeauty);
-    r = mix(r, r * 1.04 + 0.01, uBeauty * 0.5);  // un poco de luz en la piel
-    s = mix(s, r, m);
+    // Solo se suaviza lo de poco contraste (poros, granitos, rojeces); los bordes marcados —ojos, cejas, labios,
+    // pestañas, contorno— se quedan como están, así la cara no se «desvanece».
+    float edge = smoothstep(0.035, 0.11, length(detail));
+    float k = 0.65 * uBeauty * (1.0 - edge);
+    vec3 r = s - detail * k;
+    // el tono se iguala un poco (rojeces), sin aclarar la piel
+    float Y = dot(r, vec3(0.299, 0.587, 0.114)), Ys = dot(smoothSkin, vec3(0.299, 0.587, 0.114));
+    r = mix(r, smoothSkin * (Y / max(Ys, 1e-3)), 0.25 * uBeauty * (1.0 - edge));
+    // fuera del centro de la piel (bordes de la máscara: pelo, cejas, fondo) aún menos
+    s = mix(s, r, m * m);
   }
 
   // Retrato completo: ojos (blanco más limpio y algo de luz), iris (más color), dientes (sin amarillo), ojeras
