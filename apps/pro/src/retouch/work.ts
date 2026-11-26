@@ -2,6 +2,7 @@
 // exportar a resolución completa.
 import { decode, pro, retouch, shrink, toJpeg, type Pixels } from "@phootflow/core";
 import { prepareLut, type ExportOptions } from "../work";
+import { MaskWork } from "../maskwork";
 
 /** Lado largo de la foto de trabajo en Retocar (la vista y los cálculos en vivo). */
 export const RETOUCH_SIDE = 1600;
@@ -21,6 +22,9 @@ export async function developed(ph: pro.CatalogPhoto, maxSide: number): Promise<
   const img = await decode(blob, need);
   r.setSource(img as unknown as HTMLCanvasElement);
   await prepareLut(r, dev);
+  // las máscaras de Revelar también (cada foto las suyas)
+  r.keepMasks([]);
+  if (dev.masks.length) await new MaskWork(img).sync(r, dev.masks);
   const o = pro.outputSize(dev, img.width, img.height, maxSide);
   r.render(dev, o);
   const out = retouch.canvas(o.width, o.height);

@@ -6,7 +6,8 @@ import { Start } from "./screens/Start";
 import { Choose, type Tools } from "./screens/Choose";
 import { Editor } from "./screens/Editor";
 import { Results } from "./screens/Results";
-import { Design } from "./screens/Design";
+import { Design } from "@phootflow/core/ui";
+import { liteSources } from "./assets";
 import { samplePhotos } from "./samples";
 import { Library } from "./screens/Library";
 import { openSession } from "./saving";
@@ -54,7 +55,7 @@ export function App() {
     return <Library onBack={() => setScreen("start")} onContinue={resume}
       onDesign={(assets) => { setStudio({ assets, back: "library" }); setScreen("studio"); }} />;
   if (screen === "studio" && studio)
-    return <Design initial={studio.assets} onBack={() => setScreen(studio.back)} />;
+    return <Design sources={liteSources({ initial: studio.assets })} onBack={() => setScreen(studio.back)} />;
   if (screen === "choose")
     return (
       <Choose
@@ -95,5 +96,5 @@ export function App() {
   if (screen === "results")
     return <Results session={session} look={look} tools={tools} onBack={() => setScreen("editor")}
       onDesign={() => setScreen("design")} onRestart={restart} />;
-  return <Design session={session} look={look} onBack={() => setScreen("results")} />;
+  return <Design sources={liteSources({ session, look })} onBack={() => setScreen("results")} />;
 }

@@ -1,16 +1,53 @@
 // Diseño para redes con lienzo continuo: las páginas del carrusel van seguidas y las fotos, textos y formas pueden
 // cruzar de una a otra. Se mueven, escalan y giran con el dedo (o con el tirador), tienen capas y se publican como
 // carrusel en orden. También posts de una imagen.
+// Componente común de Lite y Pro: cada app le dice de dónde salen las fotos (la sesión, «Mis ediciones», la
+// biblioteca de Pro, el teléfono) y cómo se guarda lo publicado.
 import { useEffect, useRef, useState } from "preact/hooks";
-import { Icon } from "@phootflow/core/ui";
+import { Icon } from "./Icon";
+import "./design.css";
 import {
   CAROUSELS, FONTS, GRADIENTS, MAX_PAGES, PALETTE, SINGLES, STICKERS, TEMPLATES, blankBoard, cutKey, exportBoard,
   hitTest, itemBox, moveLayer, newId, pageSize, paintBoard, platform, segment, shrink,
-  type Board, type FontId, type Frame, type Item, type Look, type PhotoItem, type Pixels, type Session, type Template, type TextItem,
-} from "@phootflow/core";
-import { Slider } from "./Editor";
-import { saveDesign, saveStandaloneDesign } from "../saving";
-import { editedAssets, pickPhoneAssets, sessionAssets, type Asset } from "../assets";
+  type Board, type FontId, type Frame, type Item, type PhotoItem, type Pixels, type Template, type TextItem,
+} from "../index";
+
+/** Una foto que se puede usar en el diseño, venga de donde venga. */
+export interface Asset {
+  id: string;
+  /** De dónde sale (para la marca de la miniatura): «sesion», «editada», «telefono», «biblioteca»… */
+  source: string;
+  thumbUrl: string;
+  /** La imagen para diseñar (≈1600 px). */
+  load: () => Promise<Pixels>;
+}
+
+export interface DesignSources {
+  /** Fotos con las que se empieza (ya elegidas, en orden). */
+  initial?: Asset[];
+  /** Fotos propias del contexto (p. ej. las de la sesión de Lite), además de las elegidas. */
+  own?: Asset[];
+  /** Elegir del teléfono. */
+  phone: () => Promise<Asset[]>;
+  /** La colección de la app: «Mis ediciones» en Lite, la biblioteca revelada en Pro. */
+  library: { label: string; icon: string; empty: string; load: () => Promise<Asset[]> };
+  /** Guardar lo publicado (versiones, catálogo…). */
+  save: (files: File[], format: string, size: { w: number; h: number }) => Promise<void>;
+  /** Dónde queda guardado, para el texto de «Publicar» (vacío: no se dice). */
+  savedIn?: string;
+}
+
+function Slider({ label, min, max, value, onInput }: { label: string; min: number; max: number; value: number; onInput: (v: number) => void }) {
+  return (
+    <div class="slider">
+      <label>{label}</label>
+      <input type="range" min={min} max={max} value={value}
+        onInput={(e) => onInput(Number((e.target as HTMLInputElement).value))}
+        onDblClick={() => onInput(min < 0 ? 0 : min)} />
+      <output>{value}</output>
+    </div>
+  );
+}
 
 /** Ancho interno de una página mientras se edita (al publicar se pinta a su tamaño real). */
 const PW = 540;
@@ -18,13 +55,12 @@ const FORMATS_DESIGN: [string, string][] = [["4:5", "4:5"], ["1:1", "1:1"], ["3:
 
 type Sheet = "" | "photo" | "sticker" | "bg" | "publish" | "pages" | "swap" | "edited";
 
-const SOURCE_TAG = { sesion: "", editada: "edited", telefono: "phone" } as const;
+const SOURCE_TAG: Record<string, string> = { editada: "edited", telefono: "phone", biblioteca: "image", retocada: "brush" };
 
-export function Design({ session, look, initial = [], onBack }: {
-  session?: Session; look?: Look; initial?: Asset[]; onBack: () => void;
-}) {
+export function Design({ sources, onBack }: { sources: DesignSources; onBack: () => void }) {
+  const initial = sources.initial ?? [];
   const [assets, setAssets] = useState<Asset[]>(() => {
-    const own = session && look ? sessionAssets(session, look) : [];
+    const own = sources.own ?? [];
     return [...initial, ...own.filter((a) => !initial.some((b) => b.id === a.id))];
   });
   const usable = assets;
@@ -59,8 +95,8 @@ export function Design({ session, look, initial = [], onBack }: {
     setAssets((prev) => [...list.filter((a) => !prev.some((b) => b.id === a.id)), ...prev]);
     if (select) setOrder((o) => [...o, ...list.map((a) => a.id).filter((id) => !o.includes(id))]);
   };
-  const fromPhone = async () => { const l = await pickPhoneAssets(); if (l.length) addAssets(l); return l; };
-  const openEdited = async () => { setLibSel([]); setSheet("edited"); setLibList(await editedAssets()); };
+  const fromPhone = async () => { const l = await sources.phone(); if (l.length) addAssets(l); return l; };
+  const openEdited = async () => { setLibSel([]); setSheet("edited"); setLibList(null); setLibList(await sources.library.load()); };
   const flash = (m: string) => { setToast(m); setTimeout(() => setToast(""), 2400); };
   const center = useRef(0.5); // página a la vista (para añadir cosas ahí)
 
@@ -108,7 +144,7 @@ export function Design({ session, look, initial = [], onBack }: {
             {usable.length ? "Toca las fotos para elegir el orden." : "Elige las fotos: ya editadas en la app o del teléfono."}
           </p>
           <div class="pick-strip">
-            <button class="pick add" onClick={openEdited}><Icon name="edited" />Mis ediciones</button>
+            <button class="pick add" onClick={openEdited}><Icon name={sources.library.icon} />{sources.library.label}</button>
             <button class="pick add" onClick={fromPhone}><Icon name="phone" />Teléfono</button>
             {usable.map((p) => {
               const i = order.indexOf(p.id);
@@ -141,10 +177,10 @@ export function Design({ session, look, initial = [], onBack }: {
         {sheet === "edited" && (
           <div class="sheet-bg" onClick={() => setSheet("")}>
             <div class="sheet" onClick={(e) => e.stopPropagation()}>
-              <h2>Mis ediciones</h2>
+              <h2>{sources.library.label}</h2>
               <p class="muted small" style={{ margin: "0 0 8px" }}>Fotos ya editadas y guardadas en la app. Elige una o varias.</p>
               {libList === null && <div class="spinner" />}
-              {libList?.length === 0 && <p class="muted small" style={{ padding: "0 16px" }}>Todavía no hay fotos exportadas en «Mis ediciones».</p>}
+              {libList?.length === 0 && <p class="muted small" style={{ padding: "0 16px" }}>{sources.library.empty}</p>}
               <div class="pick-strip wrap">
                 {libList?.map((a) => {
                   const i = libSel.indexOf(a.id);
@@ -229,8 +265,7 @@ export function Design({ session, look, initial = [], onBack }: {
     setBusy("Preparando las imágenes…");
     try {
       const files = await exportBoard(board, pix, `phootflow_${tpl?.id ?? "diseno"}`);
-      if (session) await saveDesign(session, files, board.format, pageSize(board));
-      else await saveStandaloneDesign(files, board.format, pageSize(board));
+      await sources.save(files, board.format, pageSize(board));
       setBusy("");
       if (caption.trim()) {
         try { await navigator.clipboard.writeText(caption); flash("Texto copiado: pégalo en la publicación"); } catch { /* sin permiso */ }
@@ -364,7 +399,7 @@ export function Design({ session, look, initial = [], onBack }: {
               <>
                 <h2>{sheet === "photo" ? "Añadir foto" : "Cambiar foto"}</h2>
                 <div class="pick-strip wrap">
-                  <button class="pick add" onClick={openEdited}><Icon name="edited" />Mis ediciones</button>
+                  <button class="pick add" onClick={openEdited}><Icon name={sources.library.icon} />{sources.library.label}</button>
                   <button class="pick add" onClick={async () => {
                     const l = await fromPhone();
                     if (!l.length) return;
@@ -384,10 +419,10 @@ export function Design({ session, look, initial = [], onBack }: {
             )}
             {sheet === "edited" && (
               <>
-                <h2>Mis ediciones</h2>
+                <h2>{sources.library.label}</h2>
                 <p class="muted small" style={{ margin: "0 0 8px" }}>Fotos ya editadas y guardadas en la app. Elige una o varias.</p>
                 {libList === null && <div class="spinner" />}
-                {libList?.length === 0 && <p class="muted small" style={{ padding: "0 16px" }}>Todavía no hay fotos exportadas en «Mis ediciones».</p>}
+                {libList?.length === 0 && <p class="muted small" style={{ padding: "0 16px" }}>{sources.library.empty}</p>}
                 <div class="pick-strip wrap">
                   {libList?.map((a) => {
                     const i = libSel.indexOf(a.id);
@@ -445,7 +480,7 @@ export function Design({ session, look, initial = [], onBack }: {
                 <h2>Publicar</h2>
                 <p class="muted small" style={{ margin: 0 }}>
                   {board.pages > 1 ? `${board.pages} imágenes en orden para un carrusel.` : "Una imagen."} Se abrirá el menú
-                  Compartir: elige Instagram, TikTok, WhatsApp… y se guarda en Mis ediciones.
+                  Compartir: elige Instagram, TikTok, WhatsApp…{sources.savedIn ? ` y se guarda en ${sources.savedIn}.` : ""}
                 </p>
                 <textarea class="field" rows={3} placeholder="Texto de la publicación (se copia para pegarlo)" value={caption}
                   onInput={(e) => setCaption((e.target as HTMLTextAreaElement).value)} />

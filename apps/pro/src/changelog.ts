@@ -20,6 +20,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       "Dentro de cada máscara: luz, color, nitidez, textura, claridad, neblina, curva y color.",
       "Retocar por capas, sin tocar el original: quita objetos, corrige con pincel y tampón y retoca retratos.",
       "En Retocar también cambias el fondo y añades tu texto o tu logo.",
+      "Diseñar: carruseles continuos y plantillas para redes con tus fotos reveladas y retocadas.",
       "Diseño inmersivo: la foto manda y los controles flotan encima.",
       "Exporta a tamaño completo y compártelas directamente.",
       "Comparte la app con un código QR.",

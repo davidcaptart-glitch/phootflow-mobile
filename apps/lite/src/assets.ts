@@ -2,15 +2,9 @@
 // las versiones ya editadas guardadas en «Mis ediciones», o fotos del teléfono tal cual.
 import { Renderer, decode, library, platform, toJpeg, type Look, type Pixels, type Session, type Version } from "@phootflow/core";
 
-export type AssetSource = "sesion" | "editada" | "telefono";
-
-export interface Asset {
-  id: string;
-  source: AssetSource;
-  thumbUrl: string;
-  /** La imagen para diseñar (≈1600 px). */
-  load: () => Promise<Pixels>;
-}
+import type { Asset, DesignSources } from "@phootflow/core/ui";
+import { saveDesign, saveStandaloneDesign } from "./saving";
+export type { Asset };
 
 const SIDE = 1600;
 let shared: Renderer | null = null;
@@ -50,4 +44,16 @@ export async function pickPhoneAssets(): Promise<Asset[]> {
 /** Las versiones editadas guardadas en la app, las más recientes primero. */
 export async function editedAssets(): Promise<Asset[]> {
   return (await library.allPhotoVersions()).map(versionAsset);
+}
+
+/** Lo que el Diseño común necesita en Lite: la sesión (si la hay), «Mis ediciones», el teléfono y dónde guardar. */
+export function liteSources(o: { session?: Session; look?: Look; initial?: Asset[] }): DesignSources {
+  return {
+    initial: o.initial,
+    own: o.session && o.look ? sessionAssets(o.session, o.look) : [],
+    phone: pickPhoneAssets,
+    library: { label: "Mis ediciones", icon: "edited", empty: "Todavía no hay fotos exportadas en «Mis ediciones».", load: editedAssets },
+    save: (files, format, size) => (o.session ? saveDesign(o.session, files, format, size) : saveStandaloneDesign(files, format, size)),
+    savedIn: "Mis ediciones",
+  };
 }

@@ -13,7 +13,9 @@ const FILTERS: [Filter, string][] = [["all", "Todas"], ["picked", "Elegidas"], [
 
 export interface Clip { dev: pro.Dev; groups: string[]; }
 
-export function Library({ onOpen, clip, onShare }: { onOpen: (id: string) => void; clip: Clip | null; onShare: () => void }) {
+export function Library({ onOpen, clip, onShare, onDesign }: {
+  onOpen: (id: string) => void; clip: Clip | null; onShare: () => void; onDesign: (ids: string[]) => void;
+}) {
   const [photos, setPhotos] = useState<pro.CatalogPhoto[]>([]);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [filter, setFilter] = useState<Filter>("all");
@@ -136,6 +138,7 @@ export function Library({ onOpen, clip, onShare }: { onOpen: (id: string) => voi
           <button class="icon-btn" disabled={!sel.length || !clip} aria-label="Pegar ajustes"
             onClick={() => clip && applyAll((d) => pro.pasteDev(d, clip.dev, clip.groups), "Pegando")}><Icon name="layers" size={20} /></button>
           <button class="icon-btn" disabled={!sel.length} aria-label="Aplicar preset" onClick={() => setSheet("preset")}><Icon name="styles" size={20} /></button>
+          <button class="icon-btn" disabled={!sel.length} aria-label="Diseñar con estas fotos" onClick={() => onDesign(sel)}><Icon name="carousel" size={20} /></button>
           <button class="icon-btn" disabled={!sel.length} aria-label="Exportar" onClick={() => setSheet("export")}><Icon name="share" size={20} /></button>
           <button class="icon-btn" disabled={!sel.length} aria-label="Quitar de la biblioteca" onClick={async () => {
             if (!confirm(`¿Quitar ${sel.length} ${sel.length === 1 ? "foto" : "fotos"} de PhootFlow? Las del carrete del móvil no se tocan.`)) return;
