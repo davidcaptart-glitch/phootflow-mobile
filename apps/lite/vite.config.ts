@@ -2,12 +2,14 @@ import { defineConfig } from "vite";
 import preact from "@preact/preset-vite";
 import { VitePWA } from "vite-plugin-pwa";
 
-export default defineConfig({
+// `vite build --mode native` (npm run build:native): para Capacitor, sin service worker ni manifiesto de PWA.
+export default defineConfig(({ mode }) => ({
   server: { port: 5173, fs: { allow: ["../.."] } },
   preview: { port: 5173 },
   plugins: [
     preact(),
     VitePWA({
+      disable: mode === "native",
       registerType: "autoUpdate",
       includeAssets: ["apple-touch-icon.png", "wordmark.png", "mark.png"],
       manifest: {
@@ -41,4 +43,4 @@ export default defineConfig({
       },
     }),
   ],
-});
+}));

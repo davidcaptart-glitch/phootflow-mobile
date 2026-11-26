@@ -1,7 +1,7 @@
 # PhootFlow Lite y Pro (móvil)
 
-Dos apps para el móvil sobre una misma base. Hoy son PWA (se instalan desde el navegador). Mañana serán apps nativas de
-Android e iOS con Capacitor, sobre el mismo código.
+Dos apps para el móvil sobre una misma base. Son PWA (se instalan desde el navegador) y, con el mismo código, apps
+nativas de Android e iOS con Capacitor (ver «Apps nativas»).
 
 | App | Para qué | Licencia |
 |---|---|---|
@@ -19,6 +19,8 @@ npm run dev:pro         # http://localhost:5174
 npm test                # pruebas del motor y de la licencia (vitest)
 npm run typecheck
 npm run build           # apps/*/dist: lo que se publica (con service worker)
+npm run android:lite    # app nativa: compila, sincroniza y abre Android Studio (también android:pro)
+npm run cap:sync        # recompila la web nativa de las dos apps y la copia a android/ e ios/
 npm run luts            # regenera los filtros desde ../PhootFlow/assets/luts (python + numpy)
 ```
 
@@ -38,8 +40,8 @@ packages/core/          base común (@phootflow/core)
   src/platform/         TODO lo que depende de dónde corre la app (ver «Apps nativas»)
   src/ui/               tema y pantalla de licencia comunes
   assets/luts/          73 LUT de la biblioteca de escritorio, 33³ en uint8 (+ catalogo.json, LICENCIAS.md)
-apps/lite/              PhootFlow Lite
-apps/pro/               PhootFlow Pro
+apps/lite/              PhootFlow Lite (capacitor.config.ts, android/, ios/, assets/logo.png)
+apps/pro/               PhootFlow Pro (igual)
 tools/exportar_luts.py  biblioteca de escritorio → assets/luts
 tests/                  vitest
 ```
@@ -150,28 +152,141 @@ Supabase, con el campo `producto` (migración `002_productos.sql`). La app manda
 Las claves se crean con la ventana de licencias de escritorio (campo «Producto») o con
 `python admin_licencias.py crear "Ana" --producto lite`.
 
-## Apps nativas (Android / iOS), más adelante
+## Apps nativas (Android / iOS) con Capacitor
 
-Todo lo que cambia entre la PWA y la app nativa está en `packages/core/src/platform/`. `web.ts` es lo de hoy; para
-las nativas se añade `capacitor.ts` con la misma interfaz y se elige al arrancar:
+Lite y Pro son también apps nativas con [Capacitor 8](https://capacitorjs.com): la misma web dentro de una app,
+con acceso a la galería, al menú Compartir y a las compras de la tienda. La PWA no cambia.
 
-| Hoy (PWA) | Nativo (Capacitor) |
-|---|---|
-| `<input type=file>` | galería con acceso directo (`@capacitor/camera` pickImages o un plugin de fototeca) |
-| `navigator.share` / descarga | `@capacitor/share` + `@capacitor/filesystem`; guardar en Fotos con un plugin de galería |
-| id aleatorio en `localStorage` | `@capacitor/device` `getId()` (no cambia al borrar datos) |
-| `localStorage` | `@capacitor/preferences` |
-| clave PF-… | **compra en la tienda** (`platform.purchase` / `restorePurchases`) |
+| App | appId | Carpeta | Proyectos nativos |
+|---|---|---|---|
+| PhootFlow Lite | `com.phootflow.lite` | `apps/lite` | `apps/lite/android`, `apps/lite/ios` |
+| PhootFlow Pro | `com.phootflow.pro` | `apps/pro` | `apps/pro/android`, `apps/pro/ios` |
 
-Pasos: `npm i @capacitor/core @capacitor/cli`, `npx cap init`, `npx cap add android` / `ios`, con `webDir` en
-`apps/lite/dist` (una app nativa por producto). Los modelos de IA y las LUT se pueden incluir en el paquete para
-que funcione sin conexión desde el primer día.
+Todo lo que cambia entre la PWA y la app nativa está en `packages/core/src/platform/`. `index.ts` elige al cargar:
+`web.ts` en el navegador y `capacitor.ts` dentro de la app nativa (`Capacitor.isNativePlatform()`).
 
-**Compra en las tiendas.** Google Play Billing y StoreKit (directamente o con RevenueCat). La app manda el recibo
-a la Edge Function (`accion: "compra"`); la función lo valida con la tienda, crea o renueva la licencia
-(`origen` = `google_play` / `app_store`, `compra_ref` = id de la compra; columnas ya creadas en la migración 002)
-y devuelve el mismo token firmado. La comprobación de la app no cambia. Apple obliga a vender dentro de la app de
-iOS con su sistema de compras; la PWA se sigue vendiendo con claves.
+| Función | PWA (`web.ts`) | App nativa (`capacitor.ts`) |
+|---|---|---|
+| Elegir fotos | `<input type=file>` | `@capacitor/camera` `chooseFromGallery` (selector de fotos del sistema, varias, sin permisos) |
+| Compartir | `navigator.share` / descarga | `@capacitor/filesystem` (copia en la caché) + `@capacitor/share` |
+| Guardar | descarga | `@capacitor-community/media`: álbum «PhootFlow» en la galería (Android) / Fotos (iOS) |
+| Huella de la licencia | id aleatorio en `localStorage` | `@capacitor/device` `getId()` pasado por SHA-256 (no cambia al borrar datos) |
+| Datos guardados | `localStorage` | `@capacitor/preferences` |
+| Licencia | clave PF-… | clave PF-… **o compra en la tienda** (RevenueCat), ver abajo |
+
+Archivos de cada app: `capacitor.config.ts` (appId, nombre, splash), `assets/logo.png` (el logo de `public/mark.png`
+a 1024 px; de él salen iconos y splash sobre `#05070f` con `npm run assets`), `android/` e `ios/` (proyectos
+nativos, en git; sus builds y la copia de la web, no).
+
+La web de la app nativa se compila con `npm run build:native` (`vite build --mode native`): igual que la PWA pero
+**sin service worker ni manifiesto** (dentro de la app no hacen falta y en iOS dan problemas). Los modelos de IA de
+`public/modelos/` (~70 MB, fuera de git, `python tools/modelos.py`) entran en el paquete si están en la carpeta al
+compilar; sin ellos la app compila igual, pero las funciones que los usan necesitan conexión.
+
+### Probar en un Android paso a paso (Windows)
+
+1. **Instala [Android Studio](https://developer.android.com/studio)**. Trae el SDK de Android y el JDK 21 que pide
+   Capacitor 8 (un JDK 17 suelto no vale). Ábrelo una vez y deja que termine de descargar el SDK (API 36).
+2. **Prepara el repo** (una vez): `npm install` en la raíz. Para tener la IA sin conexión, copia o genera los modelos
+   en `apps/lite/public/modelos/` y `apps/pro/public/modelos/` (`python tools/modelos.py`).
+3. **Compila la web y cópiala al proyecto Android**:
+   ```
+   npm run android:lite        # o: npm run android:pro
+   ```
+   Hace `build:native` + `npx cap sync` (copia `dist/` y los plugins a `apps/lite/android`) y abre Android Studio.
+   Si no se abre solo: en Android Studio, *File → Open…* y elige la carpeta `apps/lite/android` (o `apps/pro/android`).
+4. **Espera a que termine «Gradle sync»** (barra de abajo; la primera vez descarga Gradle y librerías, unos minutos).
+   Si se queja del JDK: *File → Settings → Build, Execution, Deployment → Build Tools → Gradle → Gradle JDK* =
+   «jbr-21» (el de Android Studio).
+5. **Prepara el móvil**: *Ajustes → Información del teléfono*, toca 7 veces «Número de compilación» para activar las
+   opciones de desarrollador; en *Opciones de desarrollador* activa «Depuración USB». Conéctalo por USB y acepta
+   «¿Permitir depuración USB?». Sin móvil: *Device Manager → Create device* para un emulador.
+6. **Ejecuta**: elige el móvil en la lista de dispositivos de arriba y pulsa ▶ *Run 'app'*. Se instala y se abre.
+7. **Depurar la web dentro de la app**: en Chrome del PC, `chrome://inspect/#devices` → «inspect» en PhootFlow:
+   consola, red y elementos como en la PWA.
+8. **Después de cada cambio en el código**: `npm run cap:sync -w @phootflow/lite` (o `npm run cap:sync` para las
+   dos) y otra vez ▶ en Android Studio.
+
+APK sin abrir Android Studio (con un JDK 21 en `JAVA_HOME`, p. ej. el de Android Studio:
+`C:\Program Files\Android\Android Studio\jbr`): en `apps/lite/android`, `gradlew.bat assembleDebug` →
+`app/build/outputs/apk/debug/app-debug.apk`.
+
+**Publicar en Google Play**: en Android Studio, *Build → Generate Signed App Bundle* (`.aab`) con una clave de
+subida propia (`.jks`, **fuera del repo**: el `.gitignore` excluye `*.jks`, `*.keystore` y `keystore.properties`).
+Antes, sube `versionCode` / `versionName` en `android/app/build.gradle`.
+
+**Iconos y splash**: si cambia el logo, reemplaza `apps/<app>/assets/logo.png` (1024 × 1024, fondo transparente) y
+ejecuta `npm run assets -w @phootflow/lite` (o `pro`): regenera los iconos de Android (normales, redondos y
+adaptativos) y de iOS, y el splash claro y oscuro, todo sobre `#05070f`. Hoy salen de `mark.png` (393 px) ampliado;
+con el logo original a más resolución quedarán más nítidos.
+
+**Guardar en la galería (Android)**: va a la carpeta multimedia de la app
+(`Android/media/com.phootflow.lite/PhootFlow`), que la galería muestra como álbum «PhootFlow» y no pide permisos.
+Android la borra al desinstalar la app.
+
+### iOS (necesita un Mac)
+
+Los proyectos `apps/*/ios` ya están generados (Swift Package Manager, sin CocoaPods), con iconos, splash y los
+textos de permisos de Fotos y cámara en `Info.plist`. Xcode solo existe para macOS, así que para compilar:
+
+1. En el Mac: Xcode (App Store), Node 20+ y `npm install` en la raíz del repo.
+2. `npm run ios -w @phootflow/lite` (compila, sincroniza y abre Xcode).
+3. En Xcode: *App → Signing & Capabilities* → elige el equipo (cuenta de Apple Developer) y, para las compras,
+   añade la capacidad *In-App Purchase*.
+4. Conecta el iPhone (con *Modo desarrollador* activado en Ajustes → Privacidad y seguridad) y pulsa ▶.
+5. Para depurar la web: Safari del Mac → *Desarrollo → [iPhone] → PhootFlow*.
+
+Si se borra la carpeta `ios/`, se regenera con `npx cap add ios` dentro de `apps/<app>` (funciona también en
+Windows), luego `npm run assets -- --ios` y volver a poner las claves `NS…UsageDescription` en `Info.plist`.
+
+### Compras en la tienda (preparado, falta activarlo)
+
+El código está listo detrás de la interfaz (`platform.purchase` / `platform.restorePurchases`), con
+[RevenueCat](https://www.revenuecat.com) (`@revenuecat/purchases-capacitor`), que habla con Google Play Billing y
+StoreKit. Mientras no haya claves, la app nativa **no enseña «Comprar»** y se activa con clave PF-…, como la PWA.
+
+Cómo funciona: «Comprar PhootFlow Lite» en la pantalla de licencia → la tienda cobra (producto de **compra única**
+`phootflow_lite` / `phootflow_pro`, en `STORE_PRODUCTS` de `capacitor.ts`) → la app manda al servidor de licencias
+`{ accion: "compra", tienda, recibo, producto, huella, nombre, version }` (`license.activateWithPurchase`) → el
+servidor valida la compra, crea o recupera la licencia y devuelve el token firmado de siempre → desde ahí todo es
+igual que con clave (7 días sin conexión, comprobación cada 6 h). «Restaurar compras» hace lo mismo con las compras
+anteriores de la cuenta (móvil nuevo, reinstalación). El `recibo` es un JSON
+`{ proveedor: "revenuecat", app_user_id, transaccion, producto_tienda, purchase_token }`; el usuario de RevenueCat
+(`app_user_id`) es la huella del móvil.
+
+Lo que falta, en orden:
+
+1. **Cuentas**: Google Play Console (pago único) y Apple Developer Program (anual). En las dos, dar de alta las apps
+   `com.phootflow.lite` y `com.phootflow.pro`, y los datos fiscales y bancarios.
+2. **Productos**: en cada tienda, un producto integrado de compra única (no suscripción) por app, con id
+   `phootflow_lite` y `phootflow_pro`. Si se prefiere suscripción, cambiar `PRODUCT_CATEGORY.NON_SUBSCRIPTION` en
+   `capacitor.ts` y la lectura de `restorePurchases`. Google Play pide subir antes un `.aab` firmado a una pista de
+   prueba interna para poder crear productos.
+3. **RevenueCat**: crear el proyecto, conectar las dos tiendas (cuenta de servicio de Google Play y clave de App
+   Store Connect) y poner las **claves públicas del SDK** en `apps/lite/.env.local` y `apps/pro/.env.local`
+   (fuera de git por `*.local`):
+   ```
+   VITE_REVENUECAT_ANDROID_KEY=goog_...
+   VITE_REVENUECAT_IOS_KEY=appl_...
+   ```
+   Al compilar con `npm run build:native` aparecen «Comprar» y «Restaurar compras».
+4. **Servidor de licencias** (Edge Function `licencias`, repo PhootFlow, `servidor_licencias/`): aceptar
+   `accion: "compra"`:
+   - Validar con la API REST de RevenueCat (`GET https://api.revenuecat.com/v1/subscribers/{app_user_id}` con la
+     **clave secreta** de RevenueCat como secreto de Supabase, nunca en la app ni en el repo) que la `transaccion`
+     está en `non_subscriptions[producto_tienda]` y que el producto coincide con `producto`.
+   - Buscar la licencia por `compra_ref` (= id de la transacción). Si no existe, crearla con `producto`,
+     `origen` = `google_play` / `app_store` (columnas `origen` y `compra_ref` ya creadas en la migración 002),
+     titular «Compra en tienda» y una clave generada como las demás.
+   - Vincular la `huella` como en la activación por clave (409 si está en otro móvil, o liberar la anterior si la
+     compra es de la misma cuenta: a decidir) y devolver `{ token }` con la `clave` dentro: la app la guarda y la usa
+     en las comprobaciones periódicas, que no cambian.
+   - Respuestas que la app entiende: 200 `{ token }`, 402/403 compra no válida, 409 en uso en otro dispositivo.
+   - Opcional: webhook de RevenueCat para revocar la licencia si hay reembolso.
+5. **Probar**: Google Play con «testers de licencias» (compras de prueba sin cobro) en la pista interna; iOS con una
+   cuenta Sandbox de App Store Connect o un archivo StoreKit en Xcode.
+6. **Normas de las tiendas**: dentro de las apps nativas solo se puede vender con la compra de la tienda (no enlazar
+   a la venta de claves). Activar con una clave que ya se tiene sí se puede dejar.
 
 **Publicar directamente en redes** (sin pasar por el menú Compartir): Instagram Graph API y TikTok Content
 Posting API. Necesitan cuenta profesional, un servidor (Edge Function) y que Meta y TikTok revisen la app. Hoy, el
@@ -189,4 +304,6 @@ copia el texto del post para pegarlo.
 - **Pro**: esqueleto con licencia propia y los modos Revelar (funciona sobre una foto: luz, color y perfiles) /
   Retocar / Diseñar. Ver `ROADMAP.md`.
 - Licencias por producto desplegadas en Supabase (migración 002 + función v2, probadas en vivo).
+- **Apps nativas** (Capacitor 8): proyectos Android e iOS de las dos apps, plataforma nativa (`capacitor.ts`) y compras
+  preparadas sin claves. `cap sync` probado; **sin probar todavía en un móvil** ni compilado en Xcode.
 - Pendiente: publicar las PWA en un dominio (`MOVIL` en `admin_licencias_gui.py`).

@@ -1,9 +1,9 @@
-// Pantalla de activación común a Lite y Pro. En las apps nativas añadirá «Comprar» y «Restaurar compras»
-// (platform.purchase / restorePurchases); en la PWA se activa con la clave que manda David.
+// Pantalla de activación común a Lite y Pro. En las apps nativas con la tienda configurada añade «Comprar» y
+// «Restaurar compras» (platform.purchase / restorePurchases); en la PWA se activa con la clave que manda David.
 import { useEffect, useState } from "preact/hooks";
 import type { ComponentChildren } from "preact";
 import * as L from "../license/license";
-import { platform } from "../platform";
+import { PurchaseCancelled, platform, type StorePurchase } from "../platform";
 
 interface Props {
   product: L.Product;
@@ -52,6 +52,24 @@ export function LicenseGate({ product, appName, version, wordmark, mark = "/mark
     }
   };
 
+  // Comprar o restaurar en la tienda y cambiar la compra por la licencia en el servidor.
+  const fromStore = async (get: () => Promise<StorePurchase[]>) => {
+    setBusy(true);
+    setErr("");
+    try {
+      const compras = (await get()).filter((c) => product === "lite" || c.product === "pro");
+      if (!compras.length) throw new L.LicenseError("No hay ninguna compra de esta app en tu cuenta de la tienda.");
+      // si hay varias (p. ej. Lite y Pro), la de Pro, que abre las dos
+      const s = await L.activateWithPurchase(product, compras.find((c) => c.product === "pro") ?? compras[0], version);
+      setSt(s);
+      if (!s.ok) setErr(s.message);
+    } catch (e) {
+      if (!(e instanceof PurchaseCancelled)) setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div class="screen">
       <div class="scroll pad" style={{ display: "flex", flexDirection: "column", justifyContent: "center", gap: "18px" }}>
@@ -73,7 +91,13 @@ export function LicenseGate({ product, appName, version, wordmark, mark = "/mark
           {busy ? "Comprobando…" : "Activar"}
         </button>
         {platform.purchase && (
-          <button class="btn ghost block" onClick={() => platform.purchase!(product)}>Comprar {appName}</button>
+          <button class="btn ghost block" disabled={busy}
+            onClick={() => fromStore(async () => [await platform.purchase!(product)])}>Comprar {appName}</button>
+        )}
+        {platform.restorePurchases && (
+          <button class="btn ghost sm" disabled={busy} onClick={() => fromStore(platform.restorePurchases!)}>
+            Restaurar compras
+          </button>
         )}
         <p class="muted small" style={{ margin: 0 }}>
           La clave queda vinculada a este móvil y funciona hasta 7 días sin conexión.
