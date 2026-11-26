@@ -45,3 +45,10 @@
 .rt-vis, .rt-mini { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: var(--muted); flex: none; }
 .rt-lname { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; text-align: left; font-size: 14px; font-weight: 600; color: var(--strong); padding: 8px 4px; }
 .rt-layer.on .rt-vis { color: var(--strong); }
+
+/* Inmersiva: la foto sobre un fondo hecho con ella misma, como Revelar y Lite */
+.retouch { overflow: clip; }
+.retouch .ambient { position: absolute; inset: -40px; background: center / cover no-repeat; filter: blur(42px) brightness(0.36) saturate(1.2); transform: scale(1.1); pointer-events: none; }
+.retouch > .topbar, .retouch > .stage, .retouch > .dev-panel, .retouch > .tabs { position: relative; }
+.rt-stage { background: transparent; }
+.rt-pick .lib-grid { padding-top: 2px; }

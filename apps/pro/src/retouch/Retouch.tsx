@@ -2,7 +2,7 @@
 // IA (MI-GAN), corrector y tampón con pincel, retoque de retrato, quitar o cambiar el fondo, texto y logo.
 // Deshacer/rehacer, zoom para el detalle y exportar como en Revelar. Las capas se guardan solas en el catálogo.
 import type { JSX } from "preact";
-import { useEffect, useRef, useState } from "preact/hooks";
+import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { ELEMENTS, componentAt, platform, pro, retouch, segment, shrink, warmUpInpaint, type Mask, type Pixels } from "@phootflow/core";
 import { Icon } from "@phootflow/core/ui";
 import { ExportSheet } from "../ExportSheet";
@@ -425,8 +425,16 @@ export function Retouch({ id, onBack }: { id: string; onBack: () => void }) {
   const logoSel = selected?.kind === "logo" ? selected : null;
   const brushy = BRUSH_TOOLS.includes(tool) && !(tool === "remove" && rmMode === "tap");
 
+  // fondo inmersivo: la propia foto (con su retoque si lo hay), desenfocada y oscurecida
+  const ambient = useMemo(() => {
+    const b = thumb.current ?? photo?.thumb ?? null;
+    return b ? URL.createObjectURL(b) : null;
+  }, [photo?.id]);
+  useEffect(() => () => { if (ambient) URL.revokeObjectURL(ambient); }, [ambient]);
+
   return (
     <div class="screen retouch">
+      {ambient && <div class="ambient" style={{ backgroundImage: `url(${ambient})` }} />}
       <div class="topbar">
         <button class="icon-btn" onClick={back} aria-label="Volver"><Icon name="back" /></button>
         <div class="title">

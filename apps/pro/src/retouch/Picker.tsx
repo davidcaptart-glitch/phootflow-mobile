@@ -37,18 +37,27 @@ export function RetouchPicker({ onOpen }: { onOpen: (id: string) => void }) {
   };
 
   const retouched = items.filter((i) => i.layers > 0).length;
+  // portada: la última retocada (o la última revelada)
+  const hero = (items.find((i) => i.layers > 0) ?? [...items].sort((x, y) => y.photo.edited - x.photo.edited)[0])?.url ?? null;
 
   return (
     <div class="screen lib rt-pick">
-      <div class="topbar">
-        <img src="/mark.png" alt="PhootFlow" class="mark sm" />
-        <div class="title" style={{ alignItems: "flex-start" }}>
-          Retocar<span class="sub-t">{items.length ? `Elige una foto · ${retouched} retocada${retouched === 1 ? "" : "s"}` : "Capas, corrector, IA"}</span>
-        </div>
+      <div class={"topbar" + (items.length ? " over" : "")}>
+        <img src="/mark.png" alt="PhootFlow" class="mark sm" style={{ width: "44px" }} />
+        <span class="badge">PRO</span>
+        <span class="grow" />
         <button class="icon-btn" onClick={() => add()} aria-label="Importar fotos"><Icon name="plus" size={20} /></button>
       </div>
 
       <div class="scroll">
+        {items.length > 0 && (
+          <div class="lib-hero" style={hero ? { backgroundImage: `url(${hero})` } : undefined}>
+            <div class="lib-hero-text">
+              <h1>Retocar</h1>
+              <p>Elige una foto · {retouched} retocada{retouched === 1 ? "" : "s"}</p>
+            </div>
+          </div>
+        )}
         {loaded && items.length === 0 && (
           <div class="lib-empty">
             <img src="/mark.png" alt="" class="mark" />
