@@ -1,5 +1,6 @@
 // Sesión de fotos del móvil: cargar, analizar, revelar con el Look de la foto guía y exportar.
-import { measure } from "./engine/analyze";
+import { dhash, measure, reviewPhotos, sharpness, type Review } from "./engine/analyze";
+import type { Person } from "./ai/people";
 import { beautyEligible, bokehEligible, developFor } from "./engine/congruence";
 import { smartCrop } from "./engine/crop";
 import { detectTilt } from "./engine/straighten";
@@ -42,8 +43,13 @@ export interface Photo {
   enhance: boolean;
   /** La foto tal como llegó, si se le han quitado cosas (para deshacer). */
   originalBlob?: Blob;
+  /** Revisión rápida antes de editar: huella (dhash), nitidez y miniatura. */
+  check?: { hash: bigint; sharp: number; url: string };
   error?: string;
 }
+
+/** Lado de la imagen con la que se mide la nitidez (todas igual, para poder compararlas). */
+export const CHECK_SIDE = 512;
 
 /** Tamaño de la foto de trabajo en la vista en vivo. */
 export const WORK_SIDE = 1600;
@@ -62,6 +68,8 @@ export class Session {
   needObjects = false;
   /** Puntos de la cara para el retrato completo (ojos, dientes, ojeras). */
   needPortrait = false;
+  /** Personas encontradas en Resultados (con nombres y uniones a mano); null = aún no se han buscado. */
+  people: Person[] | null = null;
 
   add(picked: (PickedPhoto & { id?: string })[]) {
     const nuevas = picked.map((p) => ({
@@ -70,6 +78,33 @@ export class Session {
     this.photos.push(...nuevas);
     this.guideId ??= nuevas[0]?.id ?? null;
     return nuevas;
+  }
+
+  /** Revisión rápida (≈ 50 ms por foto): repetidas y movidas, para quitarlas antes de editar. */
+  async review(onProgress?: (done: number, total: number) => void): Promise<Review> {
+    let done = 0;
+    for (const p of this.photos) {
+      if (!p.check) {
+        try {
+          const { img } = await decodeSized(p.blob, CHECK_SIDE);
+          const px = pixelsOf(img);
+          const url = URL.createObjectURL(await toJpeg(shrink(img, 240), 0.8));
+          p.check = { hash: dhash(px.data, px.width, px.height), sharp: sharpness(px.data, px.width, px.height), url };
+        } catch { /* la foto que no se abre se avisa al analizarla */ }
+      }
+      onProgress?.(++done, this.photos.length);
+    }
+    return reviewPhotos(this.photos.filter((p) => p.check).map((p) => ({ id: p.id, hash: p.check!.hash, sharp: p.check!.sharp })));
+  }
+
+  /** Quita fotos de la sesión (nunca todas). */
+  remove(ids: string[]) {
+    const keep = this.photos.filter((p) => !ids.includes(p.id));
+    if (!keep.length) return;
+    for (const p of this.photos) if (ids.includes(p.id)) { if (p.thumbUrl) URL.revokeObjectURL(p.thumbUrl); if (p.check) URL.revokeObjectURL(p.check.url); }
+    this.photos = keep;
+    if (!keep.some((p) => p.id === this.guideId)) this.guideId = keep[0].id;
+    if (this.people) this.people = this.people.map((x) => ({ ...x, photoIds: x.photoIds.filter((id) => !ids.includes(id)), faces: x.faces.filter((f) => !ids.includes(f.photoId)) }));
   }
 
   get guide() { return this.photos.find((p) => p.id === this.guideId) ?? null; }

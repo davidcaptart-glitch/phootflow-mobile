@@ -1,8 +1,9 @@
 // Fotos sintéticas para probar en el navegador del PC (solo en desarrollo): misma escena con distinta luz y
-// dominante, para ver que «edita una y todas quedan igual» las iguala. No son fotos reales.
+// dominante, para ver que «edita una y todas quedan igual» las iguala. Una sale repetida y otra movida, para probar
+// el aviso antes de editar. No son fotos reales.
 import type { PickedPhoto } from "@phootflow/core";
 
-function scene(seed: number, ev: number, cast: [number, number, number], portrait: boolean, tilt = 0): Promise<Blob> {
+function scene(seed: number, ev: number, cast: [number, number, number], portrait: boolean, tilt = 0, shake = 0): Promise<Blob> {
   const w = portrait ? 1200 : 1600, h = portrait ? 1600 : 1200;
   const c = document.createElement("canvas");
   c.width = w; c.height = h;
@@ -41,13 +42,25 @@ function scene(seed: number, ev: number, cast: [number, number, number], portrai
     for (let j = 0; j < 3; j++) d[i + j] = enc(lin(d[i + j]) * k * gain[j]);
   }
   g.putImageData(img, 0, 0);
+  // foto movida: la misma escena desplazada varias veces (trepidación horizontal de `shake` px)
+  if (shake) {
+    const copy = document.createElement("canvas");
+    copy.width = w; copy.height = h;
+    copy.getContext("2d")!.drawImage(c, 0, 0);
+    g.clearRect(0, 0, w, h);
+    const n = 16;
+    for (let k = 0; k < n; k++) { g.globalAlpha = 1 / (k + 1); g.drawImage(copy, (k / (n - 1) - 0.5) * shake, 0); }
+    g.globalAlpha = 1;
+  }
   return new Promise((r) => c.toBlob((b) => r(b!), "image/jpeg", 0.9));
 }
 
 export async function samplePhotos(): Promise<PickedPhoto[]> {
-  const specs: [number, number, [number, number, number], boolean, number?][] = [
+  const specs: [number, number, [number, number, number], boolean, number?, number?][] = [
     [1, 0, [0, 0, 0], false], [2, -0.9, [12, 0, -14], false], [3, 0.5, [-8, 2, 14], true],
     [4, -0.4, [0, 6, 0], false, 4], [5, 0.2, [16, 4, -10], true], [6, -1.2, [0, 0, 8], false],
+    // repetida de la 1 (casi igual) y la 2 movida
+    [1, 0.1, [0, 0, 0], false], [2, -0.9, [12, 0, -14], false, 0, 60],
   ];
-  return Promise.all(specs.map(async ([s, ev, cast, p, t], i) => ({ name: `ejemplo_${i + 1}.jpg`, blob: await scene(s, ev, cast, p, t ?? 0) })));
+  return Promise.all(specs.map(async ([s, ev, cast, p, t, sh], i) => ({ name: `ejemplo_${i + 1}.jpg`, blob: await scene(s, ev, cast, p, t ?? 0, sh ?? 0) })));
 }

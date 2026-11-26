@@ -1,7 +1,8 @@
 // Biblioteca dentro de la app: cada sesión con sus fotos originales, el estilo (Look) y TODAS las versiones que
 // se han hecho (cada destino, en color y en B/N) y los diseños (posts y carruseles). Se guarda en IndexedDB,
 // que funciona igual en la PWA y dentro de la app nativa (WebView de Capacitor).
-import type { Look } from "./engine/types";
+import type { Box, FormatId, Look } from "./engine/types";
+import type { Person } from "./ai/people";
 
 export interface SavedSession {
   id: string;
@@ -14,6 +15,10 @@ export interface SavedSession {
   photoIds: string[];
   guideId: string | null;
   cover: Blob | null;
+  /** Personas encontradas en Resultados, con los nombres y uniones hechos a mano (huellas y caras incluidas). */
+  people?: Person[] | null;
+  /** Recortes retocados a mano: foto → destino → encuadre. */
+  crops?: Record<string, Record<FormatId, Box>>;
 }
 
 export interface SavedPhoto {

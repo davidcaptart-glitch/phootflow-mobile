@@ -39,3 +39,19 @@ export function cutsFace(s: PhotoStats, c: Box): boolean {
   return s.faces.some((f) => f.x < c.x - 0.002 || f.y < c.y - 0.002 ||
     f.x + f.w > c.x + c.w + 0.002 || f.y + f.h > c.y + c.h + 0.002);
 }
+
+/** Encuadre con la proporción `ratio` centrado en (cx, cy) y de tamaño `zoom` (1 = el mayor que cabe; 0,3 = un
+ *  tercio), sin salirse de la foto. Para retocar el recorte a mano. */
+export function frameCrop(imgRatio: number, ratio: number, cx: number, cy: number, zoom: number): Box {
+  let w = 1, h = 1;
+  if (ratio < imgRatio) w = ratio / imgRatio; else h = imgRatio / ratio;
+  const z = Math.min(1, Math.max(0.15, zoom));
+  w *= z; h *= z;
+  const x = Math.min(1 - w, Math.max(0, cx - w / 2)), y = Math.min(1 - h, Math.max(0, cy - h / 2));
+  return { x, y, w, h };
+}
+
+/** Tamaño relativo (zoom de frameCrop) de un encuadre. */
+export function cropZoom(c: Box, imgRatio: number, ratio: number): number {
+  return ratio < imgRatio ? c.w / (ratio / imgRatio) : c.h / (imgRatio / ratio);
+}

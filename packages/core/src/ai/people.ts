@@ -5,7 +5,7 @@ import * as ort from "onnxruntime-web/webgpu";
 import type { Pixels } from "../render/image";
 import { faceLandmarks } from "./portrait";
 import { similarity } from "./people-math";
-export { JOIN, cluster, cosine, people, similarity } from "./people-math";
+export { JOIN, cluster, cosine, mergePeople, people, renamePerson, similarity } from "./people-math";
 
 export const SFACE_MODEL = "/modelos/face_recognition_sface_2021dec.onnx";
 /** Caras más pequeñas que esto (fracción del ancho de la foto) no cuentan: no se reconocen bien. */
@@ -35,6 +35,8 @@ export interface FaceRef {
 export interface Person {
   id: string;
   name: string;
+  /** El nombre lo ha puesto el usuario (si no, es «Persona N»). */
+  named?: boolean;
   faces: FaceRef[];
   photoIds: string[];
   cover: Blob | null;

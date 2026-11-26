@@ -56,7 +56,7 @@ export function App() {
   if (screen === "choose")
     return (
       <Choose
-        count={session.photos.length} tools={tools} onBack={restart}
+        session={session} tools={tools} onBack={restart}
         onStyle={(st) => {
           const l = styles.styleLook(st.look);
           const t = { ...tools, ...(st.tools as Partial<Tools>) } as Tools;

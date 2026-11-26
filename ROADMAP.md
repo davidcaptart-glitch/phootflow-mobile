@@ -2,8 +2,9 @@
 
 ## Lite
 - [ ] Probar en iPhone y Android con fotos reales (HEIC del iPhone, 48 MP, memoria con 100+ fotos).
-- [ ] Retocar el recorte de una foto concreta en Resultados (arrastrar el encuadre; `Photo.cropOverride` ya existe).
-- [ ] Excluir fotos y avisar de repetidas o movidas (`dhash` y nitidez ya se pueden medir).
+- [x] Retocar el recorte de una foto concreta en Resultados (arrastrar el encuadre y acercar; se guarda con la sesión).
+- [x] Excluir fotos y avisar de repetidas o movidas antes de editar (`dhash` y nitidez; sugiere cuáles quitar).
+- [x] Guardar con la sesión los nombres de las personas y las uniones hechas a mano (Resultados → «Unir»).
 - [ ] Guardar la sesión (IndexedDB) para seguir después.
 - [ ] Más plantillas y fuentes incluidas (ahora usa las del sistema).
 - [ ] Detector de caras de largo alcance para fotos de grupo (el de MediaPipe es de corto alcance; YuNet de
