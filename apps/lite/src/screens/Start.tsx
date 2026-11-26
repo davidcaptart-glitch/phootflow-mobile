@@ -2,7 +2,7 @@
 // el titular encima, la acción principal con el degradado de la marca y las sesiones para seguir editando.
 import { useEffect, useState } from "preact/hooks";
 import { library, type SavedSession } from "@phootflow/core";
-import { Icon } from "@phootflow/core/ui";
+import { Icon, ShareApp } from "@phootflow/core/ui";
 
 export function Start({ onPick, onSample, onLibrary, onDesign, onContinue }: {
   onPick: () => void; onSample: () => void; onLibrary: () => void; onDesign: () => void; onContinue: (id: string) => void;
@@ -18,6 +18,7 @@ export function Start({ onPick, onSample, onLibrary, onDesign, onContinue }: {
     return () => urls.forEach((u) => URL.revokeObjectURL(u));
   }, []);
   const hero = sessions.find((s) => s.url)?.url ?? null;
+  const [sharing, setSharing] = useState(false);
 
   return (
     <div class="screen start">
@@ -30,6 +31,7 @@ export function Start({ onPick, onSample, onLibrary, onDesign, onContinue }: {
         <img src="/mark.png" alt="PhootFlow" class="mark sm" />
         <span class="badge">LITE</span>
         <span class="grow" />
+        <button class="icon-btn" onClick={() => setSharing(true)} aria-label="Compartir la app"><Icon name="share" size={19} /></button>
         {sessions.length > 0 && (
           <button class="icon-btn" onClick={onLibrary} aria-label="Mis ediciones"><Icon name="library" size={20} /></button>
         )}
@@ -63,6 +65,7 @@ export function Start({ onPick, onSample, onLibrary, onDesign, onContinue }: {
         )}
         <p class="start-foot">Las fotos no salen de tu móvil.</p>
       </div>
+      {sharing && <ShareApp appName="PhootFlow Lite" audience="edita una foto y todas quedan igual" onClose={() => setSharing(false)} />}
     </div>
   );
 }

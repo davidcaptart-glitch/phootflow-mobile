@@ -1,0 +1,10 @@
+Modelos de IA que PhootFlow sirve desde /modelos/ (se ejecutan en tu dispositivo; las fotos no salen de él):
+
+- Real-ESRGAN General x4v3 — BSD-3-Clause, (c) Xintao Wang. Exportado a ONNX por Qualcomm AI Hub.
+  https://github.com/xinntao/Real-ESRGAN
+- SFace (face_recognition_sface_2021dec) — Apache-2.0, OpenCV Zoo.
+  https://github.com/opencv/opencv_zoo
+- MI-GAN (migan_pipeline_v2) — MIT, Picsart AI Research.
+  https://github.com/Picsart-AI-Research/MI-GAN
+- MediaPipe Tasks Vision (detección de caras, segmentación, puntos de la cara) — Apache-2.0, Google.
+- LUT incluidos: ver los créditos y licencias en el repositorio (packages/core/assets/luts/LICENCIAS.md).

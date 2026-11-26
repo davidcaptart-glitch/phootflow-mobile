@@ -7,6 +7,7 @@ import {
   COLOR_LUTS, DEFAULT_LOOK, LUT_SIZE, Renderer, Session, WORK_SIDE, ZERO_LIGHT, decode, loadLut, platform,
   type Light, type Look, type Pixels,
 } from "@phootflow/core";
+import { Icon, ShareApp } from "@phootflow/core/ui";
 
 type Mode = "develop" | "retouch" | "design";
 
@@ -30,6 +31,7 @@ export function App() {
   const [mode, setMode] = useState<Mode>("develop");
   const [session] = useState(() => new Session());
   const [ready, setReady] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [look, setLook] = useState<Look>({ ...DEFAULT_LOOK });
   const r = useRef<Renderer | null>(null);
   const host = useRef<HTMLDivElement>(null);
@@ -78,6 +80,7 @@ export function App() {
         <img src="/wordmark.png" class="wordmark" alt="PhootFlow" />
         <span class="badge">Pro</span>
         <div class="grow" />
+        <button class="icon-btn" onClick={() => setSharing(true)} aria-label="Compartir la app"><Icon name="share" size={19} /></button>
         <button class="btn sm" onClick={open}>Abrir foto</button>
       </div>
       <div class="stage" ref={host}>
@@ -130,6 +133,7 @@ export function App() {
           </button>
         ))}
       </div>
+      {sharing && <ShareApp appName="PhootFlow Pro" audience="edición profesional en el móvil" onClose={() => setSharing(false)} />}
     </div>
   );
 }
