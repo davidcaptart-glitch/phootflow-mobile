@@ -1,6 +1,11 @@
 // Plantillas básicas para redes. Cada una se rellena con las fotos elegidas (en orden).
 import type { FormatId } from "../engine/types";
 import { newId, type Board, type Item, type PhotoItem, type TextItem } from "./board";
+import { CAROUSELS } from "./carousels";
+import { SINGLES } from "./collection";
+import { PRO_TEMPLATES, VIDEO_TEMPLATES } from "./pro-templates";
+
+export type TemplateCategory = "bodas" | "eventos" | "deporte" | "negocio" | "portfolio" | "video";
 
 export interface Template {
   id: string;
@@ -9,6 +14,12 @@ export interface Template {
   photos: number;
   format: FormatId;
   carousel?: boolean;
+  /** Categoría (plantillas de Pro): bodas, eventos, deporte, negocio, portfolio, video. */
+  category?: TemplateCategory;
+  /** Plantilla de vídeo: cada página es una escena; se exporta con `exportVideo` / `exportGif`. */
+  video?: boolean;
+  /** Segundos por escena recomendados para el vídeo. */
+  perPage?: number;
   build(photoIds: string[]): Board;
 }
 
@@ -101,4 +112,12 @@ export const TEMPLATES: Template[] = [
   },
 ];
 
-export const templateById = (id: string) => TEMPLATES.find((t) => t.id === id)!;
+/** Todas las plantillas registradas: las básicas, carruseles, de una imagen, las de Pro y las de vídeo. */
+export function allTemplates(): Template[] {
+  return [...TEMPLATES, ...SINGLES, ...CAROUSELS, ...PRO_TEMPLATES, ...VIDEO_TEMPLATES];
+}
+
+/** Plantillas de una categoría (Pro y vídeo). */
+export const templatesIn = (category: TemplateCategory) => allTemplates().filter((t) => t.category === category);
+
+export const templateById = (id: string) => allTemplates().find((t) => t.id === id)!;
