@@ -1,7 +1,8 @@
 // PhootFlow Pro: todo en uno para profesionales. Revelar (tipo Lightroom, lo principal: biblioteca y revelado no
 // destructivo) + Retocar (lo útil de Photoshop) + Diseñar (Canva completo). Misma base que Lite (@phootflow/core).
 // Estado: Revelar hecho; Retocar y Diseñar, próximas fases (ver ROADMAP.md).
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
+import { setUnsavedWork } from "@phootflow/core";
 import { Icon, ShareApp } from "@phootflow/core/ui";
 import { Develop } from "./Develop";
 import { Library, type Clip } from "./Library";
@@ -14,6 +15,8 @@ export function App() {
   const [clip, setClip] = useState<Clip | null>(null);
   const [sharing, setSharing] = useState(false);
   const [libKey, setLibKey] = useState(0);
+  // con una foto abierta en Revelar, la versión nueva espera a que vuelva a la biblioteca
+  useEffect(() => setUnsavedWork(open != null), [open]);
 
   if (open && mode === "develop")
     return <Develop id={open} clip={clip} setClip={setClip} onBack={() => { setOpen(null); setLibKey((k) => k + 1); }} />;

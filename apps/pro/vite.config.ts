@@ -1,14 +1,20 @@
 import { defineConfig } from "vite";
 import preact from "@preact/preset-vite";
 import { VitePWA } from "vite-plugin-pwa";
+import pkg from "./package.json";
 
 export default defineConfig({
+  // una sola versión: la del package.json (aviso de actualización, «Novedades» y licencia)
+  define: { __APP_VERSION__: JSON.stringify(pkg.version) },
   server: { port: 5174, fs: { allow: ["../.."] } },
   preview: { port: 5174 },
   plugins: [
     preact(),
     VitePWA({
-      registerType: "autoUpdate",
+      // «prompt»: la versión nueva se descarga y espera; la app decide cuándo pasar a ella sin perder trabajo
+      // (@phootflow/core updates/pwa.ts registra /sw.js, por eso no se inyecta el registro)
+      registerType: "prompt",
+      injectRegister: false,
       includeAssets: ["apple-touch-icon.png", "wordmark.png", "mark.png"],
       manifest: {
         name: "PhootFlow Pro",

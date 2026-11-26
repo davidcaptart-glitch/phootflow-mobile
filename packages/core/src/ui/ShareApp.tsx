@@ -3,6 +3,7 @@
 import { useMemo, useState } from "preact/hooks";
 import qrcode from "qrcode-generator";
 import { Icon } from "./Icon";
+import { appVersion, openWhatsNew } from "./Updates";
 
 /** Dirección pública de la app: la de esta página (en la app nativa futura se pasará `url`). */
 export function appUrl(url?: string) {
@@ -55,6 +56,11 @@ export function ShareApp({ appName, audience, url, onClose }: {
         <p class="qr-url">{link.replace(/^https?:\/\//, "")}</p>
         <button class="btn primary" onClick={send}><Icon name="share" size={19} />Enviar el enlace</button>
         {msg && <p class="muted small" style={{ textAlign: "center", marginTop: "10px" }}>{msg}</p>}
+        {appVersion() && (
+          <button class="link-btn" style={{ marginTop: "10px" }} onClick={() => { onClose(); openWhatsNew(); }}>
+            <Icon name="news" size={16} />Novedades · versión {appVersion()}
+          </button>
+        )}
       </div>
     </div>
   );

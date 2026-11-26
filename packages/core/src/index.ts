@@ -27,3 +27,5 @@ export * as license from "./license/license";
 export { platform, setPlatform } from "./platform";
 export type { Platform, PickedPhoto, ShareResult, StorePurchase } from "./platform";
 export * as pro from "./pro";
+export * from "./updates/changelog";
+export { setUnsavedWork, hasUnsavedWork, checkForUpdate, applyUpdate } from "./updates/pwa";

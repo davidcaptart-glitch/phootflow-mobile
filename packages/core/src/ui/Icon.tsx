@@ -44,6 +44,8 @@ const P: Record<string, JSX.Element> = {
   home: <path d="M3 10.5 12 3l9 7.5V21H3z" />,
   rotateL: <><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v5h5" /></>,
   rotateR: <><path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 4v5h-5" /></>,
+  update: <><path d="M20 11a8 8 0 0 0-14.6-4.5L4 8" /><path d="M4 4v4h4" /><path d="M4 13a8 8 0 0 0 14.6 4.5L20 16" /><path d="M20 20v-4h-4" /></>,
+  news: <><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" /><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /><path d="M5 16v4M3 18h4" /></>,
   flip: <><path d="M12 3v18" /><path d="M8 7 3 12l5 5z" /><path d="m16 7 5 5-5 5z" /></>,
 };
 
