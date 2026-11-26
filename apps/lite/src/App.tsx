@@ -47,7 +47,7 @@ export function App() {
 
   if (screen === "start")
     return <Start onPick={() => begin()} onSample={() => begin(true)} onLibrary={() => setScreen("library")}
-      onDesign={() => { setStudio({ assets: [], back: "start" }); setScreen("studio"); }} />;
+      onDesign={() => { setStudio({ assets: [], back: "start" }); setScreen("studio"); }} onContinue={resume} />;
   if (screen === "library")
     return <Library onBack={() => setScreen("start")} onContinue={resume}
       onDesign={(assets) => { setStudio({ assets, back: "library" }); setScreen("studio"); }} />;

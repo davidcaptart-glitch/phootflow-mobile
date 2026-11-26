@@ -7,18 +7,19 @@ import {
 } from "@phootflow/core";
 import type { Tools } from "./Choose";
 import { CompareSwitch, CurtainOverlay, type CompareMode } from "../BeforeAfter";
+import { Icon } from "@phootflow/core/ui";
 
 type Tab = "styles" | "filters" | "bokeh" | "beauty" | "crop" | "splash" | "bw" | "light";
 
 const TABS: { key: Tab; ico: string; name: string }[] = [
-  { key: "styles", ico: "⭐", name: "Estilos" },
-  { key: "filters", ico: "🎞️", name: "Filtros" },
-  { key: "bokeh", ico: "🌫️", name: "Fondo" },
-  { key: "beauty", ico: "✨", name: "Belleza" },
-  { key: "crop", ico: "📐", name: "Recorte" },
-  { key: "splash", ico: "🎨", name: "Color" },
-  { key: "bw", ico: "◐", name: "B/N" },
-  { key: "light", ico: "☀️", name: "Luz" },
+  { key: "styles", ico: "styles", name: "Estilos" },
+  { key: "filters", ico: "filters", name: "Filtros" },
+  { key: "bokeh", ico: "bokeh", name: "Fondo" },
+  { key: "beauty", ico: "beauty", name: "Belleza" },
+  { key: "crop", ico: "crop", name: "Recorte" },
+  { key: "splash", ico: "color", name: "Color" },
+  { key: "bw", ico: "bw", name: "B/N" },
+  { key: "light", ico: "light", name: "Luz" },
 ];
 
 const NEUTRAL = { ...ZERO_LIGHT, wbR: 1, wbB: 1 };
@@ -273,11 +274,13 @@ export function Editor({ session, tools, look, setLook, setTools, onBack, onDone
 
   return (
     <div class="screen editor">
+      {guide?.thumbUrl && <div class="ambient" style={{ backgroundImage: `url(${guide.thumbUrl})` }} />}
       <div class="topbar">
-        <button class="icon-btn" onClick={onBack} aria-label="Atrás">‹</button>
-        <div class="title">Foto guía <span class="muted small">· se aplicará a {session.photos.length}</span></div>
+        <button class="icon-btn" onClick={onBack} aria-label="Atrás"><Icon name="back" /></button>
+        <div class="title">Foto guía<span class="sub-t">Se aplica a {session.photos.length === 1 ? "la foto" : `las ${session.photos.length}`}</span></div>
         <button class={"icon-btn" + (compare !== "after" ? " active" : "")} aria-label="Comparar antes y después"
-          onClick={() => setCompare(compare === "after" ? "curtain" : "after")}>◑</button>
+          onClick={() => setCompare(compare === "after" ? "curtain" : "after")}><Icon name="compare" size={20} /></button>
+        <button class="btn primary sm" disabled={!ready} onClick={onDone}>Aplicar</button>
       </div>
 
       <div class="stage" ref={host}
@@ -352,7 +355,7 @@ export function Editor({ session, tools, look, setLook, setTools, onBack, onDone
                     <span>{st.name}</span>
                     {!st.builtin && (
                       <button class="st-more" aria-label={`Opciones de ${st.name}`}
-                        onClick={() => { setNameInput(st.name); setSheet({ mode: "edit", st }); }}>⋯</button>
+                        onClick={() => { setNameInput(st.name); setSheet({ mode: "edit", st }); }}><Icon name="more" size={16} /></button>
                     )}
                   </div>
                 );
@@ -364,8 +367,8 @@ export function Editor({ session, tools, look, setLook, setTools, onBack, onDone
             </p>
             <div style={{ padding: "4px 16px" }}>
               <div class="row">
-                <button class="btn primary sm grow" onClick={() => setCreator(true)}>✨ Crear mi estilo</button>
-                <button class="btn sm grow" onClick={() => { setNameInput(""); setSheet({ mode: "save" }); }}>＋ Guardar lo que llevo</button>
+                <button class="btn sm grow" onClick={() => setCreator(true)}><Icon name="beauty" size={17} />Crear mi estilo</button>
+                <button class="btn sm grow" onClick={() => { setNameInput(""); setSheet({ mode: "save" }); }}><Icon name="plus" size={17} />Guardar lo que llevo</button>
               </div>
             </div>
           </>
@@ -376,7 +379,7 @@ export function Editor({ session, tools, look, setLook, setTools, onBack, onDone
               {LUT_GROUPS.map((g) => <button class={"chip" + (g === group ? " on" : "")} onClick={() => setGroup(g)}>{g}</button>)}
             </div>
             <LutStrip list={list} current={look.lut} thumbs={thumbs} tab="filters" onPick={(id) => set({ lut: id })} />
-            {look.lut && <Slider label="Intensidad" min={0} max={100} value={Math.round(look.lutAmount * 100)} onInput={(v) => set({ lutAmount: v / 100 })} />}
+            {look.lut && <Slider ruler label={lutById(look.lut)?.name ?? "Intensidad"} min={0} max={100} value={Math.round(look.lutAmount * 100)} onInput={(v) => set({ lutAmount: v / 100 })} />}
             <p class="hint">Desliza sobre la foto para pasar de filtro.</p>
           </>
         )}
@@ -390,7 +393,7 @@ export function Editor({ session, tools, look, setLook, setTools, onBack, onDone
         )}
         {tab === "bokeh" && look.speed > 0 && (
           <>
-            <Slider label="Velocidad" min={1} max={100} value={look.speed} onInput={(v) => set({ speed: v })} />
+            <Slider ruler label="Velocidad" min={1} max={100} value={look.speed} onInput={(v) => set({ speed: v })} />
             <div class="chips">
               {([[0, "→ Horizontal"], [30, "↗ Diagonal"], [90, "↑ Vertical"], [-30, "↘ Diagonal"]] as [number, string][]).map(([a, n]) => (
                 <button class={"chip" + (look.speedAngle === a ? " on" : "")} onClick={() => set({ speedAngle: a })}>{n}</button>
@@ -405,7 +408,7 @@ export function Editor({ session, tools, look, setLook, setTools, onBack, onDone
               <button class={"chip" + (look.bokeh === 0 ? " on" : "")} onClick={() => set({ bokeh: 0 })}>No</button>
               {BOKEH_LEVELS.map(([v, n]) => <button class={"chip" + (look.bokeh === v ? " on" : "")} onClick={() => set({ bokeh: v })}>{n}</button>)}
             </div>
-            <Slider label="Desenfoque" min={0} max={100} value={look.bokeh} onInput={(v) => set({ bokeh: v })} />
+            <Slider ruler label="Desenfoque" min={0} max={100} value={look.bokeh} onInput={(v) => set({ bokeh: v })} />
             {st && !bokehEligible(st) && <p class="hint warn">En esta foto no se ve una persona clara: aquí no se desenfoca. Se aplicará en las que sí la tengan.</p>}
             {st && bokehEligible(st) && !guide?.person && <p class="hint warn">No se ha podido cargar la IA (¿sin conexión?). Prueba de nuevo con internet.</p>}
           </>
@@ -463,10 +466,10 @@ export function Editor({ session, tools, look, setLook, setTools, onBack, onDone
                         if (!st || !guide) return "";
                         const c = session.cropFor(guide, f.id);
                         const short = c.w * st.width < f.w * 0.95 || c.h * st.height < f.h * 0.95;
-                        return short ? (look.aiResize ? " · ✨ esta foto se amplía con IA" : " · esta foto sale más pequeña") : "";
+                        return short ? (look.aiResize ? " · esta foto se amplía con IA" : " · esta foto sale más pequeña") : "";
                       })()}</span>
                     </span>
-                    <span class="check">{on ? "✓" : ""}</span>
+                    <span class="check">{on && <Icon name="check" size={14} />}</span>
                   </button>
                 );
               })}
@@ -503,7 +506,7 @@ export function Editor({ session, tools, look, setLook, setTools, onBack, onDone
             ))}
             <div class="sub">Colores</div>
             <div class="chips">
-              <button class={"chip" + (dropper ? " on" : "")} onClick={() => setDropper(!dropper)}>💧 Tocar la foto</button>
+              <button class={"chip" + (dropper ? " on" : "")} onClick={() => setDropper(!dropper)}><Icon name="dropper" size={16} />Tocar la foto</button>
               {HUES.map(([h, n, css]) => {
                 const on = look.splash.hues.includes(h);
                 return (
@@ -514,7 +517,7 @@ export function Editor({ session, tools, look, setLook, setTools, onBack, onDone
               })}
               {look.splash.hues.filter((h) => !HUES.some((x) => x[0] === h)).map((h) => (
                 <button class="chip on" onClick={() => setSplash({ hues: look.splash.hues.filter((x) => x !== h) })}>
-                  <span class="dot-c" style={{ background: `hsl(${h} 75% 50%)` }} />{hueName(h)} ✕
+                  <span class="dot-c" style={{ background: `hsl(${h} 75% 50%)` }} />{hueName(h)}<Icon name="close" size={14} />
                 </button>
               ))}
             </div>
@@ -562,16 +565,10 @@ export function Editor({ session, tools, look, setLook, setTools, onBack, onDone
         )}
       </div>
 
-      <div class="apply">
-        <button class="btn primary block" disabled={!ready} onClick={onDone}>
-          Aplicar a {session.photos.length === 1 ? "la foto" : `las ${session.photos.length} fotos`} →
-        </button>
-      </div>
-
       <div class="tabs">
         {tabs.map((t) => (
           <button class={"tab" + (t.key === tab ? " on" : "")} onClick={() => setTab(t.key)}>
-            <span class="t-ico">{t.ico}</span>{t.name}
+            <Icon name={t.ico} size={21} />{t.name}
           </button>
         ))}
       </div>
@@ -651,9 +648,18 @@ function LutStrip({ list, current, thumbs, tab, onPick, noneLabel = "Ninguno" }:
   );
 }
 
-export function Slider({ label, min, max, value, onInput, fmt }: {
-  label: string; min: number; max: number; value: number; onInput: (v: number) => void; fmt?: (v: number) => string;
+export function Slider({ label, min, max, value, onInput, fmt, ruler }: {
+  label: string; min: number; max: number; value: number; onInput: (v: number) => void; fmt?: (v: number) => string; ruler?: boolean;
 }) {
+  if (ruler)
+    return (
+      <div class="slider ruler">
+        <div class="r-label">{label} · <b>{fmt ? fmt(value) : value}</b></div>
+        <input type="range" min={min} max={max} value={value} aria-label={label}
+          onInput={(e) => onInput(Number((e.target as HTMLInputElement).value))}
+          onDblClick={() => onInput(min < 0 ? 0 : min)} />
+      </div>
+    );
   return (
     <div class="slider">
       <label>{label}</label>

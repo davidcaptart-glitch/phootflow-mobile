@@ -1,6 +1,7 @@
 // «Mis ediciones»: las sesiones guardadas en la app, con sus fotos y todas las versiones hechas
 // (cada destino, color y B/N, y los diseños). Desde aquí se vuelven a compartir o se sigue editando.
 import { useEffect, useMemo, useState } from "preact/hooks";
+import { Icon } from "@phootflow/core/ui";
 import { formatById, library, platform, styles, type SavedPhoto, type SavedSession, type Version } from "@phootflow/core";
 import { versionAsset, type Asset } from "../assets";
 
@@ -33,9 +34,9 @@ export function Library({ onBack, onContinue, onDesign }: {
   return (
     <div class="screen">
       <div class="topbar">
-        <button class="icon-btn" onClick={onBack} aria-label="Atrás">‹</button>
+        <button class="icon-btn" onClick={onBack} aria-label="Atrás"><Icon name="back" /></button>
         <div class="title">Mis ediciones</div>
-        <div class="icon-btn"><img src="/mark.png" alt="" class="mark sm" /></div>
+        <img src="/mark.png" alt="PhootFlow" class="mark sm" style={{ width: "44px" }} />
       </div>
       <div class="scroll pad" style={{ display: "grid", gap: "10px", alignContent: "start", gridAutoRows: "max-content" }}>
         {sessions === null && <div class="spinner" />}
@@ -89,7 +90,7 @@ function SessionView({ s, onBack, onContinue, onDesign }: {
     return (
       <div class="screen">
         <div class="topbar">
-          <button class="icon-btn" onClick={() => setView(null)} aria-label="Atrás">‹</button>
+          <button class="icon-btn" onClick={() => setView(null)} aria-label="Atrás"><Icon name="back" /></button>
           <div class="title">{label(view)}</div>
           <div style={{ width: "44px" }} />
         </div>
@@ -112,7 +113,7 @@ function SessionView({ s, onBack, onContinue, onDesign }: {
   return (
     <div class="screen">
       <div class="topbar">
-        <button class="icon-btn" onClick={onBack} aria-label="Atrás">‹</button>
+        <button class="icon-btn" onClick={onBack} aria-label="Atrás"><Icon name="back" /></button>
         <div class="title">{s.title}</div>
         <div style={{ width: "44px" }} />
       </div>
@@ -123,7 +124,7 @@ function SessionView({ s, onBack, onContinue, onDesign }: {
           </p>
           {versions.some((v) => v.kind === "photo") && (
             <button class={"chip" + (picking ? " on" : "")} onClick={() => { setPicking(!picking); setChosen([]); }}>
-              {picking ? "Cancelar" : "🖼️ Elegir para diseñar"}
+              {picking ? "Cancelar" : "Elegir para diseñar"}
             </button>
           )}
         </div>

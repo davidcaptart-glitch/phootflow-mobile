@@ -2,6 +2,7 @@
 // cruzar de una a otra. Se mueven, escalan y giran con el dedo (o con el tirador), tienen capas y se publican como
 // carrusel en orden. También posts de una imagen.
 import { useEffect, useRef, useState } from "preact/hooks";
+import { Icon } from "@phootflow/core/ui";
 import {
   CAROUSELS, FONTS, GRADIENTS, MAX_PAGES, PALETTE, SINGLES, STICKERS, TEMPLATES, blankBoard, cutKey, exportBoard,
   hitTest, itemBox, moveLayer, newId, pageSize, paintBoard, platform, segment, shrink,
@@ -17,7 +18,7 @@ const FORMATS_DESIGN: [string, string][] = [["4:5", "4:5"], ["1:1", "1:1"], ["3:
 
 type Sheet = "" | "photo" | "sticker" | "bg" | "publish" | "pages" | "swap" | "edited";
 
-const SOURCE_TAG = { sesion: "", editada: "✓", telefono: "📱" } as const;
+const SOURCE_TAG = { sesion: "", editada: "edited", telefono: "phone" } as const;
 
 export function Design({ session, look, initial = [], onBack }: {
   session?: Session; look?: Look; initial?: Asset[]; onBack: () => void;
@@ -94,9 +95,9 @@ export function Design({ session, look, initial = [], onBack }: {
     return (
       <div class="screen">
         <div class="topbar">
-          <button class="icon-btn" onClick={onBack} aria-label="Atrás">‹</button>
+          <button class="icon-btn" onClick={onBack} aria-label="Atrás"><Icon name="back" /></button>
           <div class="title">Diseñar para redes</div>
-          <div class="icon-btn"><img src="/mark.png" alt="" class="mark sm" /></div>
+          <img src="/mark.png" alt="PhootFlow" class="mark sm" style={{ width: "44px" }} />
         </div>
         <div class="scroll">
           <div class="chips" style={{ padding: "4px 16px 2px" }}>
@@ -107,15 +108,15 @@ export function Design({ session, look, initial = [], onBack }: {
             {usable.length ? "Toca las fotos para elegir el orden." : "Elige las fotos: ya editadas en la app o del teléfono."}
           </p>
           <div class="pick-strip">
-            <button class="pick add" onClick={openEdited}><span>✓</span>Mis ediciones</button>
-            <button class="pick add" onClick={fromPhone}><span>📱</span>Teléfono</button>
+            <button class="pick add" onClick={openEdited}><Icon name="edited" />Mis ediciones</button>
+            <button class="pick add" onClick={fromPhone}><Icon name="phone" />Teléfono</button>
             {usable.map((p) => {
               const i = order.indexOf(p.id);
               return (
                 <button class={"pick" + (i >= 0 ? " on" : "")} onClick={() => setOrder(i >= 0 ? order.filter((x) => x !== p.id) : [...order, p.id])}>
                   <img src={p.thumbUrl} />
                   {i >= 0 && <span class="num">{i + 1}</span>}
-                  {SOURCE_TAG[p.source] && <span class="src">{SOURCE_TAG[p.source]}</span>}
+                  {SOURCE_TAG[p.source] && <span class="src"><Icon name={SOURCE_TAG[p.source]} size={12} /></span>}
                 </button>
               );
             })}
@@ -123,7 +124,7 @@ export function Design({ session, look, initial = [], onBack }: {
           <div class="tpl-grid">
             {kind === "carousel" && (
               <button class="tpl" onClick={() => start(null)}>
-                <div class="tpl-blank">＋</div>
+                <div class="tpl-blank"><Icon name="plus" size={28} /></div>
                 <div class="tpl-name">En blanco</div>
                 <div class="muted small">Lienzo libre de 3 páginas</div>
               </button>
@@ -258,9 +259,9 @@ export function Design({ session, look, initial = [], onBack }: {
   return (
     <div class="screen design">
       <div class="topbar">
-        <button class="icon-btn" onClick={() => { setBoard(null); setTpl(null); }} aria-label="Plantillas">‹</button>
+        <button class="icon-btn" onClick={() => { setBoard(null); setTpl(null); }} aria-label="Plantillas"><Icon name="back" /></button>
         <div class="title">{board.pages > 1 ? `Carrusel · ${board.pages} págs.` : "Diseño"}</div>
-        <button class="icon-btn" onClick={openPreview} aria-label="Vista previa">▶</button>
+        <button class="icon-btn" onClick={openPreview} aria-label="Vista previa"><Icon name="share" size={20} /></button>
         <button class="btn primary sm" onClick={() => setSheet("publish")}>Publicar</button>
       </div>
 
@@ -269,15 +270,15 @@ export function Design({ session, look, initial = [], onBack }: {
       <div class="panel">
         {!item && (
           <div class="tools">
-            <button class="tool" onClick={() => setSheet("photo")}><span>＋</span>Foto</button>
+            <button class="tool" onClick={() => setSheet("photo")}><span><Icon name="image" /></span>Foto</button>
             <button class="tool" onClick={() => add({
               kind: "text", id: newId(), text: "Tu texto", x: center.current, y: 0.5, size: 0.06, font: "moderna", color: "#ffffff",
               weight: 700, align: "center", box: null, shadow: true, spacing: 0, upper: false,
-            })}><span>Aa</span>Texto</button>
-            <button class="tool" onClick={() => add({ kind: "shape", id: newId(), shape: "rect", x: center.current - 0.3, y: 0.4, w: 0.6, h: 0.2, fill: "#ffffff", radius: 0.1 })}><span>◼</span>Forma</button>
-            <button class="tool" onClick={() => setSheet("sticker")}><span>✨</span>Sticker</button>
-            <button class="tool" onClick={() => setSheet("bg")}><span>🎨</span>Fondo</button>
-            <button class="tool" onClick={() => setSheet("pages")}><span>▭</span>Páginas</button>
+            })}><span><Icon name="text" /></span>Texto</button>
+            <button class="tool" onClick={() => add({ kind: "shape", id: newId(), shape: "rect", x: center.current - 0.3, y: 0.4, w: 0.6, h: 0.2, fill: "#ffffff", radius: 0.1 })}><span><Icon name="shapes" /></span>Forma</button>
+            <button class="tool" onClick={() => setSheet("sticker")}><span><Icon name="beauty" /></span>Sticker</button>
+            <button class="tool" onClick={() => setSheet("bg")}><span><Icon name="palette" /></span>Fondo</button>
+            <button class="tool" onClick={() => setSheet("pages")}><span><Icon name="carousel" /></span>Páginas</button>
           </div>
         )}
         {item && (
@@ -298,9 +299,9 @@ export function Design({ session, look, initial = [], onBack }: {
                       {f === "rect" ? "▭ Marco" : f === "circle" ? "◯ Círculo" : "⌒ Arco"}
                     </button>
                   ))}
-                  <button class={"chip" + (reframe ? " on" : "")} onClick={() => setReframe(!reframe)}>✋ Encuadrar foto</button>
+                  <button class={"chip" + (reframe ? " on" : "")} onClick={() => setReframe(!reframe)}><Icon name="hand" size={16} />Encuadrar foto</button>
                   <button class="chip" onClick={() => setSheet("swap")}>Cambiar foto</button>
-                  <button class="chip" onClick={() => cutout(item)}>✂️ Recortar persona</button>
+                  <button class="chip" onClick={() => cutout(item)}><Icon name="scissors" size={16} />Recortar persona</button>
                 </div>
                 <Slider label="Zoom" min={100} max={300} value={Math.round(item.zoom * 100)} onInput={(v) => update({ zoom: v / 100 })} />
                 {(item.frame ?? "rect") === "rect" && <Slider label="Esquinas" min={0} max={50} value={Math.round(item.radius * 100)} onInput={(v) => update({ radius: v / 100 })} />}
@@ -363,13 +364,13 @@ export function Design({ session, look, initial = [], onBack }: {
               <>
                 <h2>{sheet === "photo" ? "Añadir foto" : "Cambiar foto"}</h2>
                 <div class="pick-strip wrap">
-                  <button class="pick add" onClick={openEdited}><span>✓</span>Mis ediciones</button>
+                  <button class="pick add" onClick={openEdited}><Icon name="edited" />Mis ediciones</button>
                   <button class="pick add" onClick={async () => {
                     const l = await fromPhone();
                     if (!l.length) return;
                     if (sheet === "photo") { for (const a of l) await addPhoto(a.id, [...l, ...assets]); }
                     else { await ensure([l[0].id], new Map(pix), [...l, ...assets]); update({ photo: l[0].id, ox: 0, oy: 0, zoom: 1 }); setSheet(""); }
-                  }}><span>📱</span>Teléfono</button>
+                  }}><Icon name="phone" />Teléfono</button>
                   {usable.map((p) => (
                     <button class="pick on" onClick={async () => {
                       if (sheet === "photo") return addPhoto(p.id);
@@ -431,7 +432,7 @@ export function Design({ session, look, initial = [], onBack }: {
                 <div class="row" style={{ padding: "0 16px" }}>
                   <button class="btn sm" disabled={board.pages <= 1} onClick={() => pages(-1)}>− Quitar</button>
                   <div class="grow" style={{ textAlign: "center", fontWeight: 700, color: "var(--strong)" }}>{board.pages} / {MAX_PAGES}</div>
-                  <button class="btn sm" disabled={board.pages >= MAX_PAGES} onClick={() => pages(1)}>＋ Añadir</button>
+                  <button class="btn sm" disabled={board.pages >= MAX_PAGES} onClick={() => pages(1)}><Icon name="plus" size={16} />Añadir</button>
                 </div>
                 <div class="chips">
                   {FORMATS_DESIGN.map(([f, n]) => <button class={"chip" + (board.format === f ? " on" : "")} onClick={() => setBoard({ ...board, format: f })}>{n}</button>)}
@@ -644,7 +645,7 @@ function Preview({ pages, onClose }: { pages: string[]; onClose: () => void }) {
   return (
     <div class="preview">
       <div class="topbar">
-        <button class="icon-btn" onClick={onClose} aria-label="Cerrar">✕</button>
+        <button class="icon-btn" onClick={onClose} aria-label="Cerrar"><Icon name="close" /></button>
         <div class="title">Vista previa</div>
         <div style={{ width: "44px" }} />
       </div>

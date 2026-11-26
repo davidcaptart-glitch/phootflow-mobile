@@ -1,6 +1,7 @@
 // Quitar objetos y personas de una foto: se toca la figura (la IA la separa) o se pinta con el dedo, y MI-GAN
 // rellena el hueco. Se aplica a la foto original (luego el estilo se aplica encima como a las demás).
 import { useEffect, useRef, useState } from "preact/hooks";
+import { Icon } from "@phootflow/core/ui";
 import {
   ELEMENTS, INPAINT_SIDE, componentAt, decode, removeArea, segment, shrink, toJpeg, warmUpInpaint,
   type Mask, type Photo, type Pixels, type Session,
@@ -119,7 +120,7 @@ export function Remove({ session, photo, onClose }: { session: Session; photo: P
   return (
     <div class="screen remove">
       <div class="topbar">
-        <button class="icon-btn" onClick={() => onClose(false)} aria-label="Cancelar">✕</button>
+        <button class="icon-btn" onClick={() => onClose(false)} aria-label="Cancelar"><Icon name="close" /></button>
         <div class="title">Quitar objetos o personas</div>
         <button class="btn primary sm" disabled={!result || !!busy} onClick={apply}>Aplicar</button>
       </div>
@@ -144,8 +145,8 @@ export function Remove({ session, photo, onClose }: { session: Session; photo: P
       {result && <CompareSwitch mode={cmp} setMode={setCmp} />}
       <div class="panel">
         <div class="chips">
-          <button class={"chip" + (mode === "tap" ? " on" : "")} onClick={() => setMode("tap")}>👆 Tocar lo que quitar</button>
-          <button class={"chip" + (mode === "brush" ? " on" : "")} onClick={() => setMode("brush")}>🖌️ Pintar</button>
+          <button class={"chip" + (mode === "tap" ? " on" : "")} onClick={() => setMode("tap")}><Icon name="tap" size={16} />Tocar lo que quitar</button>
+          <button class={"chip" + (mode === "brush" ? " on" : "")} onClick={() => setMode("brush")}><Icon name="brush" size={16} />Pintar</button>
           <button class="chip" disabled={!hasSel} onClick={clearSel}>Borrar marca</button>
         </div>
         {mode === "brush" && <Slider label="Pincel" min={1} max={15} value={brush} onInput={setBrush} />}
@@ -154,7 +155,7 @@ export function Remove({ session, photo, onClose }: { session: Session; photo: P
           {result ? " Puedes seguir quitando cosas." : ""}
         </p>
         <div style={{ padding: "4px 16px 10px", display: "grid", gap: "8px" }}>
-          <button class="btn primary block" disabled={!hasSel || !!busy} onClick={run}>✨ Quitar lo marcado</button>
+          <button class="btn primary block" disabled={!hasSel || !!busy} onClick={run}><Icon name="eraser" size={18} />Quitar lo marcado</button>
           {photo.originalBlob && !result && (
             <button class="btn ghost block sm" onClick={async () => { setBusy("Volviendo a la original…"); await session.restorePhoto(photo); onClose(true); }}>
               Deshacer: volver a la foto original

@@ -1,5 +1,6 @@
 // Todas las fotos con el estilo de la guía. Desde aquí se comparten o se pasa a diseñar para redes.
 import { useEffect, useRef, useState } from "preact/hooks";
+import { Icon } from "@phootflow/core/ui";
 import { ENHANCE_AMOUNT, Renderer, decode, peopleAI, type FaceRef, type Person, enhance, enhanceReady, formatById, platform, shrink, toJpeg, type Look, type Photo, type Pixels, type Session } from "@phootflow/core";
 import { saveExports, saveSession } from "../saving";
 import { BeforeAfter } from "../BeforeAfter";
@@ -134,9 +135,9 @@ export function Results({ session, look, tools, onBack, onDesign, onRestart }: {
   return (
     <div class="screen">
       <div class="topbar">
-        <button class="icon-btn" onClick={onBack} aria-label="Volver a editar">‹</button>
+        <button class="icon-btn" onClick={onBack} aria-label="Volver a editar"><Icon name="back" /></button>
         <div class="title">{n} {n === 1 ? "foto lista" : "fotos listas"}</div>
-        <button class="icon-btn" onClick={onRestart} aria-label="Empezar de nuevo">↺</button>
+        <button class="icon-btn" onClick={onRestart} aria-label="Inicio"><Icon name="home" size={20} /></button>
       </div>
       <div class="scroll">
         {look.alsoBW && (
@@ -147,7 +148,7 @@ export function Results({ session, look, tools, onBack, onDesign, onRestart }: {
         )}
         <div class="people">
           {people === null ? (
-            <button class="chip" onClick={findPeople}>👥 Buscar personas</button>
+            <button class="chip" onClick={findPeople}><Icon name="people" size={16} />Buscar personas</button>
           ) : people.length === 0 ? (
             <span class="muted small">Ninguna persona se repite en varias fotos.</span>
           ) : (
@@ -175,7 +176,7 @@ export function Results({ session, look, tools, onBack, onDesign, onRestart }: {
           {shownPhotos.map((p) => (
             <button class="cell" style={{ aspectRatio: fmt ? String(formatById(fmt).ratio) : "1" }} onClick={() => openPhoto(p)}>
               {previews[p.id] ? <img src={previews[p.id]} /> : p.error ? <span class="error small">{p.error}</span> : <div class="spinner sm" />}
-              {p.enhance && <span class="enh-badge">✨ IA</span>}
+              {p.enhance && <span class="enh-badge">IA</span>}
             </button>
           ))}
         </div>
@@ -219,13 +220,13 @@ export function Results({ session, look, tools, onBack, onDesign, onRestart }: {
                     await preview(open, c, big.before);
                   }
                 }} />
-                <span>✨ Mejorar con IA (enfocar y limpiar)</span>
+                <span>Mejorar con IA (enfocar y limpiar)</span>
               </label>
             </div>
             <p class="hint">{enhBusy || "Recupera nitidez y quita ruido. Tarda unos segundos por foto: úsalo en las que lo necesiten."}</p>
             <div style={{ padding: "4px 16px 0" }}>
               <button class="btn block sm" disabled={!!enhBusy} onClick={() => { setRemoving(open); setOpen(null); }}>
-                🧽 Quitar objetos o personas{open.originalBlob ? " (retocada)" : ""}
+                <Icon name="eraser" size={18} />Quitar objetos o personas{open.originalBlob ? " (retocada)" : ""}
               </button>
             </div>
             <div class="row" style={{ padding: "4px 16px 10px" }}>
@@ -246,7 +247,7 @@ export function Results({ session, look, tools, onBack, onDesign, onRestart }: {
                   } finally {
                     rr.dispose();
                   }
-                }}>🔍 Ampliar ×{k} con IA</button>
+                }}><Icon name="zoom" size={17} />Ampliar ×{k} con IA</button>
               ))}
             </div>
             <button class="btn" onClick={() => setOpen(null)}>Hecho</button>
