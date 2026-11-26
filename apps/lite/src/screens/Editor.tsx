@@ -106,16 +106,23 @@ export function Editor({ session, tools, look, setLook, setTools, onBack, onDone
     }
     let alive = true;
     (async () => {
-      const g = guide!;
+      const g = guide;
       setReady(false);
-      if (!g.stats || g.aiLevel < session.aiLevel) {
-        setStatus(session.needSegmentation ? "Buscando a las personas (la primera vez se descarga la IA)…" : "Analizando la foto…");
-        await session.analyze(g);
+      // sin fotos (p. ej. una entrada que solo tiene un diseño) no hay nada que preparar: se dice en vez de esperar
+      if (!g) { setStatus("Esta sesión no tiene fotos que editar. Vuelve atrás y elige fotos."); return; }
+      try {
+        if (!g.stats || g.aiLevel < session.aiLevel) {
+          setStatus(session.needSegmentation ? "Buscando a las personas (la primera vez se descarga la IA)…" : "Analizando la foto…");
+          await session.analyze(g);
+        }
+        if (!alive) return;
+        if (g.error) { setStatus(g.error); return; }
+        work.current = await decode(g.blob, Math.min(WORK_SIDE, r.current!.maxSize));
+        await session.prepare(r.current!, g, work.current, look);
+      } catch (e) {
+        if (alive) setStatus(`No se ha podido abrir esta foto: ${(e as Error).message}`);
+        return;
       }
-      if (!alive) return;
-      if (g.error) { setStatus(g.error); return; }
-      work.current = await decode(g.blob, Math.min(WORK_SIDE, r.current!.maxSize));
-      await session.prepare(r.current!, g, work.current, look);
       setThumbs({});
       if (alive) setReady(true);
       // las demás, en segundo plano

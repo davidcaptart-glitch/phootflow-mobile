@@ -161,7 +161,7 @@ function SessionView({ s, onBack, onContinue, onDesign }: {
             Diseñar con {chosen.length || ""} {chosen.length === 1 ? "foto" : "fotos"} →
           </button>
         ) : (
-          <button class="btn primary block" onClick={onContinue}>Seguir editando</button>
+          s.photoIds.length > 0 && <button class="btn primary block" onClick={onContinue}>Seguir editando</button>
         )}
         <button class="btn block sm" onClick={async () => {
           const name = prompt("Nombre del estilo (para usarlo con otras fotos):", "");

@@ -49,11 +49,11 @@ export function Start({ onPick, onSample, onLibrary, onDesign, onContinue }: {
           {import.meta.env.DEV && <button class="btn ghost sm" onClick={onSample}>Fotos de ejemplo (desarrollo)</button>}
         </div>
 
-        {sessions.length > 0 && (
+        {sessions.some((s) => s.photoIds.length > 0) && (
           <section class="resume">
             <h2>Seguir editando</h2>
             <div class="resume-strip">
-              {sessions.map((s) => (
+              {sessions.filter((s) => s.photoIds.length > 0).map((s) => (
                 <button class="resume-card" onClick={() => onContinue(s.id)}>
                   <span class="resume-img" style={s.url ? { backgroundImage: `url(${s.url})` } : undefined} />
                   <span class="resume-name">{s.title}</span>

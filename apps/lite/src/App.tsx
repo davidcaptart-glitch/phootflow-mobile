@@ -42,6 +42,8 @@ export function App() {
   const resume = async (id: string) => {
     const r = await openSession(id);
     if (!r) return;
+    // una entrada sin fotos (un diseño hecho desde el inicio) se ve en «Mis ediciones», no en el editor
+    if (!r.session.photos.length) { setScreen("library"); return; }
     setSession(r.session);
     setLook(r.look);
     setTools(r.tools);
