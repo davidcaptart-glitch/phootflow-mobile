@@ -1,7 +1,7 @@
 // PhootFlow Lite: eliges fotos → dices qué quieres editar → editas una (en vivo) → todas quedan igual →
 // las compartes o las pones en una plantilla / carrusel para redes.
-import { useState } from "preact/hooks";
-import { DEFAULT_LOOK, Session, platform, styles, type Look } from "@phootflow/core";
+import { useEffect, useState } from "preact/hooks";
+import { DEFAULT_LOOK, Session, platform, setUnsavedWork, styles, type Look } from "@phootflow/core";
 import { Start } from "./screens/Start";
 import { Choose, type Tools } from "./screens/Choose";
 import { Editor } from "./screens/Editor";
@@ -21,6 +21,8 @@ export function App() {
   const [look, setLook] = useState<Look>({ ...DEFAULT_LOOK, formats: ["ig-feed"] });
   /** Diseño sin sesión (desde el inicio o con fotos de «Mis ediciones»). */
   const [studio, setStudio] = useState<{ assets: Asset[]; back: Screen } | null>(null);
+  // fuera del inicio y de «Mis ediciones» hay una edición en curso: la versión nueva espera a que acabe
+  useEffect(() => setUnsavedWork(screen !== "start" && screen !== "library"), [screen]);
 
   const begin = async (sample = false) => {
     const picked = sample ? await samplePhotos() : await platform.pickPhotos();

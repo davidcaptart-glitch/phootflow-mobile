@@ -54,6 +54,8 @@ const P: Record<string, JSX.Element> = {
   alert: <><path d="M12 4 2.5 20h19z" /><path d="M12 10v4.5M12 17.2v.3" /></>,
   move: <><path d="M12 3v18M3 12h18" /><path d="m9 6 3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" /></>,
   merge: <><circle cx="7" cy="8" r="3" /><circle cx="17" cy="8" r="3" /><path d="M7 11v2a5 5 0 0 0 5 5 5 5 0 0 0 5-5v-2M12 18v3" /></>,
+  update: <><path d="M20 11a8 8 0 0 0-14.6-4.5L4 8" /><path d="M4 4v4h4" /><path d="M4 13a8 8 0 0 0 14.6 4.5L20 16" /><path d="M20 20v-4h-4" /></>,
+  news: <><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" /><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /><path d="M5 16v4M3 18h4" /></>,
   flip: <><path d="M12 3v18" /><path d="M8 7 3 12l5 5z" /><path d="m16 7 5 5-5 5z" /></>,
 };
 

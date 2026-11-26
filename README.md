@@ -136,6 +136,20 @@ zip como escritorio), SFace (copiado del escritorio si ya está) y MI-GAN (SHA-2
 solo al usarlos y el service worker los guarda. Los de MediaPipe vienen de Google; para la app nativa se pueden
 incluir todos en el paquete.
 
+## Versiones, actualización y «Novedades»
+
+- La versión de cada app es la de `apps/<app>/package.json` (Vite la pone en `__APP_VERSION__`; la usan la licencia,
+  el aviso de actualización y «Novedades»).
+- Para publicar una versión: sube `version` en `apps/<app>/package.json` y añade arriba de `apps/<app>/src/changelog.ts`
+  una entrada con la versión, la fecha y frases cortas para el usuario (qué puede hacer ahora, sin tecnicismos).
+- La PWA se pone al día sola (`packages/core/src/updates/pwa.ts`, service worker en modo «prompt»): la versión nueva
+  se descarga en segundo plano y se aplica al abrir la app, al volver a ella tras un rato o al dejarla en segundo
+  plano, siempre que no haya una edición en curso (`setUnsavedWork`). Si la hay, sale el aviso «Hay una versión
+  nueva · Actualizar» y nunca se recarga sin preguntar. Mientras está abierta comprueba cada 30 min.
+- Al abrir una versión nueva sale una vez la hoja «Novedades de la versión X» (`ui/Updates.tsx`, última vista en
+  `platform.kv` «novedades_vistas»); después, desde «Compartir la app» › «Novedades» u `openWhatsNew()`.
+  El registro sirve igual en las apps nativas; allí la actualización la hace la tienda.
+
 ## Licencias
 
 Mismo servidor que el escritorio (`servidor_licencias/` en el repo PhootFlow): Edge Function `licencias` de
